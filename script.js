@@ -8,7 +8,15 @@
   const $ = (selector, root = document) => root.querySelector(selector);
   const state = {
     repos: [], repo: null, path: '', items: [], selectedPath: '',
-    apiCalls: 0, previewCache: new Map(), revealObserver: null
+    apiCalls: 0,
+    previewCache: new Map(),
+    revealObserver: null,
+    pathRequestId: 0,
+    previewRequestId: 0,
+    bootstrapRequestId: 0,
+    pathController: null,
+    previewController: null,
+    bootstrapController: null
   };
 
   const languageColors = {
@@ -52,24 +60,55 @@
 
   const formatNumber = (value) => new Intl.NumberFormat('en', { notation: value >= 10000 ? 'compact' : 'standard', maximumFractionDigits: 1 }).format(value || 0);
 
-  async function githubFetch(url) {
+  async function githubFetch(url, options = {}) {
     state.apiCalls += 1;
-    const response = await fetch(url, {
-      headers: { Accept: 'application/vnd.github+json' },
-      cache: 'no-store'
-    });
+    let response;
+    try {
+      response = await fetch(url, {
+        headers: { Accept: 'application/vnd.github+json' },
+        cache: 'default',
+        signal: options.signal
+      });
+    } catch (error) {
+      if (error && error.name === 'AbortError') throw error;
+      throw new Error('Could not connect to GitHub. Check your internet connection and retry.');
+    }
+
     if (!response.ok) {
       const remaining = response.headers.get('X-RateLimit-Remaining');
-      if (response.status === 403 && remaining === '0') {
-        throw new Error('GitHub API rate limit reached. Wait a little, or open the repositories directly on GitHub.');
+      if (response.status === 429 || (response.status === 403 && remaining === '0')) {
+        throw new Error('GitHub’s public API rate limit has been reached. Wait a little, then retry.');
       }
-      if (response.status === 404) throw new Error('This repository path is not available. It may have been moved or removed.');
-      if (response.status === 409 || response.status === 422) throw new Error('GitHub could not read this folder right now. Try the repository root.');
+      if (response.status === 404) {
+        throw new Error('This repository path is not available. It may have been moved or removed.');
+      }
+      if (response.status === 409 || response.status === 422) {
+        throw new Error('GitHub could not read this folder right now. Try the repository root.');
+      }
+      if (response.status >= 500) {
+        throw new Error('GitHub is temporarily unavailable (' + response.status + '). Please retry shortly.');
+      }
       throw new Error('GitHub responded with ' + response.status + '. Please try again shortly.');
     }
-    return response.json();
+
+    try {
+      return await response.json();
+    } catch (error) {
+      throw new Error('GitHub returned an unreadable response. Please retry.');
+    }
   }
 
+  async function fetchPublicRepos(signal) {
+    const collected = [];
+    for (let page = 1; page <= 100; page += 1) {
+      const url = API + '/users/' + USER + '/repos?per_page=100&sort=updated&type=owner&page=' + page;
+      const batch = await githubFetch(url, { signal });
+      if (!Array.isArray(batch)) throw new Error('GitHub returned an unexpected repository list.');
+      collected.push(...batch.filter(repo => !repo.private));
+      if (batch.length < 100) return collected;
+    }
+    throw new Error('The repository list is unusually large. Open GitHub directly to browse the full collection.');
+  }
   function setAPIStatus(label, mode = '') {
     const element = byId('api-status');
     if (!element) return;
@@ -89,7 +128,11 @@
     const wall = byId('live-repo-grid');
     const items = repos.filter(repo => !CURATED.has(repo.name)).slice(0, 6);
     if (!items.length) {
-      wall.innerHTML = '<div class="repo-loading glass-panel">The featured projects above cover the public repositories currently available.</div>';
+      wall.innerHTML = '<div class="repo-loading glass-panel">' +
+        (repos.length
+          ? 'The featured projects above cover the public repositories currently available.'
+          : 'GitHub did not return any public repositories for this account.') +
+        '</div>';
       return;
     }
     wall.innerHTML = items.map(repo => {
@@ -116,16 +159,26 @@
       }[name] ?? 10);
       return curatedRank(a.name) - curatedRank(b.name) || a.name.localeCompare(b.name);
     });
+
+    if (!sorted.length) {
+      select.innerHTML = '<option value="">No public repositories found</option>';
+      byId('repo-open').href = 'https://github.com/' + USER + '?tab=repositories';
+      byId('file-count').textContent = '0 ITEMS';
+      byId('file-list').innerHTML = '<div class="empty-state"><span>∅</span><p>No public repositories were returned by GitHub.</p></div>';
+      byId('breadcrumb').innerHTML = '<span class="crumb-current">/</span><span class="breadcrumb-hint">No repository selected</span>';
+      renderRepoDetails(null);
+      setAPIStatus('LIVE');
+      return;
+    }
+
     select.innerHTML = sorted.map(repo =>
       '<option value="' + escapeHTML(repo.name) + '">' + escapeHTML(repo.name) + '</option>'
     ).join('');
-    const preferred = sorted.find(repo => repo.name === 'TermRunway-Android') || sorted.find(repo => repo.name !== 'Portfolio-') || sorted[0];
-    if (preferred) {
-      select.value = preferred.name;
-      await setCurrentRepo(preferred.name);
-    }
+    const preferred = sorted.find(repo => repo.name === 'TermRunway-Android') ||
+      sorted.find(repo => repo.name !== 'Portfolio-') || sorted[0];
+    select.value = preferred.name;
+    await setCurrentRepo(preferred.name);
   }
-
   function renderFileList(items) {
     const query = byId('file-search').value.trim().toLowerCase();
     const filtered = items.filter(item => item.name.toLowerCase().includes(query));
@@ -172,31 +225,93 @@
     byId('file-preview').innerHTML = '<div class="preview-empty"><div class="preview-glyph">⌘</div><span class="case-overline">SOURCE VIEWER</span><h3>A closer look.</h3><p>Select a file to preview its contents here. Open the complete file on GitHub for the full experience.</p><div class="preview-shortcuts"><span>README.md</span><span>src/</span><span>docs/</span></div></div>';
   }
 
+  function ensureRepoDetailsPanel() {
+    let panel = byId('repo-detail');
+    if (panel) return panel;
+    const toolbar = $('.lab-toolbar');
+    if (!toolbar) return null;
+    panel = document.createElement('section');
+    panel.className = 'repo-detail';
+    panel.id = 'repo-detail';
+    panel.setAttribute('aria-label', 'Selected repository metadata');
+    panel.setAttribute('aria-live', 'polite');
+    toolbar.insertAdjacentElement('afterend', panel);
+    return panel;
+  }
+
+  function renderRepoDetails(repo) {
+    const panel = ensureRepoDetailsPanel();
+    if (!panel) return;
+    if (!repo) {
+      panel.innerHTML = '<p class="repo-detail-empty">Select a public repository to see its metadata.</p>';
+      return;
+    }
+    const metrics = [
+      ['Stars', formatNumber(repo.stargazers_count || 0)],
+      ['Forks', formatNumber(repo.forks_count || 0)],
+      ['Default branch', repo.default_branch || 'main'],
+      ['Last push', formatDate(repo.pushed_at)]
+    ];
+    panel.innerHTML =
+      '<div class="repo-detail-copy">' +
+        '<div class="repo-detail-title"><strong>' + escapeHTML(repo.full_name || (USER + '/' + repo.name)) + '</strong>' +
+          '<span class="repo-detail-badge">' + (repo.fork ? 'FORK' : 'PUBLIC') + '</span></div>' +
+        '<p>' + escapeHTML(repo.description || 'No description has been added to this repository.') + '</p>' +
+        (repo.language ? '<span class="repo-detail-language">' + escapeHTML(repo.language) + '</span>' : '') +
+      '</div>' +
+      '<div class="repo-detail-metrics">' +
+        metrics.map(([label, value]) =>
+          '<span><small>' + escapeHTML(label) + '</small><b>' + escapeHTML(value) + '</b></span>'
+        ).join('') +
+      '</div>';
+  }
   async function setCurrentRepo(name) {
     const repo = state.repos.find(item => item.name === name);
     if (!repo) return;
+
+    state.pathController?.abort();
+    state.previewController?.abort();
+    state.pathRequestId += 1;
+    state.previewRequestId += 1;
     state.repo = repo;
     state.path = '';
     state.items = [];
     state.selectedPath = '';
     byId('repo-open').href = repo.html_url;
     byId('file-search').value = '';
+    renderRepoDetails(repo);
     renderBreadcrumb();
+    showEmptyPreview();
     await loadPath('');
   }
-
   async function loadPath(path) {
     if (!state.repo) return;
+    const repo = state.repo;
+    const requestId = ++state.pathRequestId;
+
+    state.pathController?.abort();
+    state.previewController?.abort();
+    state.previewRequestId += 1;
+    const controller = new AbortController();
+    state.pathController = controller;
+
     state.path = path;
     state.selectedPath = '';
     renderBreadcrumb();
     byId('file-list').innerHTML = '<div class="empty-state"><span class="loading-spinner"></span><p>Loading this folder from GitHub…</p></div>';
     byId('file-count').textContent = 'LOADING';
     showEmptyPreview();
-    const url = API + '/repos/' + USER + '/' + encodeURIComponent(state.repo.name) + '/contents' + (path ? '/' + path.split('/').map(encodeURIComponent).join('/') : '') + '?ref=' + encodeURIComponent(state.repo.default_branch || 'main');
+
+    const url = API + '/repos/' + USER + '/' + encodeURIComponent(repo.name) + '/contents' +
+      (path ? '/' + path.split('/').map(encodeURIComponent).join('/') : '') +
+      '?ref=' + encodeURIComponent(repo.default_branch || 'main');
+
     try {
-      const items = await githubFetch(url);
-      if (!Array.isArray(items)) throw new Error('This path is a file. Select a folder to browse, or preview the file from its repository page.');
+      const items = await githubFetch(url, { signal: controller.signal });
+      if (requestId !== state.pathRequestId || state.repo?.name !== repo.name) return;
+      if (!Array.isArray(items)) {
+        throw new Error('This path is a file. Select a folder to browse, or open the file from its repository page.');
+      }
       state.items = items.sort((a, b) => {
         if (a.type === 'dir' && b.type !== 'dir') return -1;
         if (b.type === 'dir' && a.type !== 'dir') return 1;
@@ -209,28 +324,34 @@
         byId('file-list').innerHTML = '<div class="empty-state"><span>∅</span><p>This folder is empty.</p></div>';
       }
     } catch (error) {
+      if ((error && error.name === 'AbortError') || requestId !== state.pathRequestId) return;
       byId('file-list').innerHTML = '<div class="empty-state"><span>!</span><p>' + escapeHTML(error.message) + '</p><button type="button" id="retry-path">Try again</button></div>';
       byId('file-count').textContent = 'UNAVAILABLE';
       setAPIStatus('RETRY NEEDED', 'error');
     }
   }
-
   function decodeBase64Utf8(value) {
     const binary = atob(value.replace(/\s/g, ''));
     const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
     return new TextDecoder('utf-8', { fatal: false }).decode(bytes);
   }
 
-  async function getFileText(item) {
+  async function getFileText(item, signal) {
     if (state.previewCache.has(item.url)) return state.previewCache.get(item.url);
-    const result = await githubFetch(item.url);
+    const result = await githubFetch(item.url, { signal });
     if (result.encoding === 'base64' && result.content) {
       const content = decodeBase64Utf8(result.content);
       state.previewCache.set(item.url, content);
       return content;
     }
     if (result.download_url) {
-      const response = await fetch(result.download_url);
+      let response;
+      try {
+        response = await fetch(result.download_url, { signal });
+      } catch (error) {
+        if (error && error.name === 'AbortError') throw error;
+        throw new Error('Could not download the file preview. Check your connection and retry.');
+      }
       if (response.ok) {
         const content = await response.text();
         state.previewCache.set(item.url, content);
@@ -248,8 +369,9 @@
   function drawPreview(item, text) {
     const target = byId('file-preview');
     const link = repoFileURL(state.repo, item.path);
-    const lines = text.split('\n').slice(0, 150);
-    const truncated = text.split('\n').length > 150;
+    const allLines = text.split('\n');
+    const lines = allLines.slice(0, 150);
+    const truncated = allLines.length > 150;
     const code = lines.map(line => '<span class="code-line">' + escapeHTML(line) + '</span>').join('');
     target.innerHTML = '<div class="preview-file-head"><span class="preview-file-name">' + escapeHTML(item.path) + '</span><a href="' + escapeHTML(link) + '" target="_blank" rel="noreferrer">Open ↗</a></div>' +
       '<div class="preview-file-body"><pre class="preview-code">' + code + '</pre></div>' +
@@ -267,23 +389,33 @@
   }
 
   async function selectFile(item) {
+    const requestId = ++state.previewRequestId;
+    const repoName = state.repo?.name;
+    state.previewController?.abort();
+    const controller = new AbortController();
+    state.previewController = controller;
+
     state.selectedPath = item.path;
     renderFileList(state.items);
     const target = byId('file-preview');
     target.innerHTML = '<div class="empty-state"><span class="loading-spinner"></span><p>Reading ' + escapeHTML(item.name) + '…</p></div>';
+
     if (!isLikelyText(item)) {
+      if (requestId !== state.previewRequestId || state.repo?.name !== repoName) return;
       const link = repoFileURL(state.repo, item.path);
-      target.innerHTML = '<div class="preview-empty"><div class="preview-glyph">' + escapeHTML(iconFor(item)) + '</div><span class="case-overline">NON-TEXT FILE</span><h3>' + escapeHTML(item.name) + '</h3><p>This file is stored in the repository but is not shown as text here. Open it on GitHub to inspect or download it.</p><a class="text-link" href="' + escapeHTML(link) + '" target="_blank" rel="noreferrer">Open original file ↗</a></div>';
+      target.innerHTML = '<div class="preview-empty"><div class="preview-glyph">' + escapeHTML(iconFor(item)) + '</div><span class="case-overline">NON-TEXT FILE</span><h3>' + escapeHTML(item.name) + '</h3><p>This file is stored in the repository but is not shown as text here. Open it on GitHub to inspect or download it.</p><a class="text-link" href="' + escapeHTML(link) + '" target="_blank" rel="noopener noreferrer">Open original file ↗</a></div>';
       return;
     }
+
     try {
-      const text = await getFileText(item);
+      const text = await getFileText(item, controller.signal);
+      if (requestId !== state.previewRequestId || state.repo?.name !== repoName || state.selectedPath !== item.path) return;
       drawPreview(item, text);
     } catch (error) {
-      target.innerHTML = '<div class="preview-empty"><div class="preview-glyph">!</div><span class="case-overline">PREVIEW UNAVAILABLE</span><h3>Open the original.</h3><p>' + escapeHTML(error.message) + '</p><a class="text-link" href="' + escapeHTML(repoFileURL(state.repo, item.path)) + '" target="_blank" rel="noreferrer">View on GitHub ↗</a></div>';
+      if ((error && error.name === 'AbortError') || requestId !== state.previewRequestId) return;
+      target.innerHTML = '<div class="preview-empty"><div class="preview-glyph">!</div><span class="case-overline">PREVIEW UNAVAILABLE</span><h3>Open the original.</h3><p>' + escapeHTML(error.message) + '</p><a class="text-link" href="' + escapeHTML(repoFileURL(state.repo, item.path)) + '" target="_blank" rel="noopener noreferrer">View on GitHub ↗</a></div>';
     }
   }
-
   function observeReveals() {
     const elements = document.querySelectorAll('.reveal:not(.is-visible)');
     if (!('IntersectionObserver' in window)) {
@@ -301,6 +433,52 @@
       }, { threshold: 0.12, rootMargin: '0px 0px -35px 0px' });
     }
     elements.forEach(element => state.revealObserver.observe(element));
+  }
+
+  async function loadAccountData() {
+    const requestId = ++state.bootstrapRequestId;
+    state.bootstrapController?.abort();
+    const controller = new AbortController();
+    state.bootstrapController = controller;
+    setAPIStatus('CONNECTING');
+    byId('file-list').innerHTML = '<div class="empty-state"><span class="loading-spinner"></span><p>Connecting to GitHub…</p></div>';
+    byId('file-count').textContent = 'LOADING';
+
+    try {
+      const [repos, profile] = await Promise.all([
+        fetchPublicRepos(controller.signal),
+        githubFetch(API + '/users/' + USER, { signal: controller.signal })
+      ]);
+      if (requestId !== state.bootstrapRequestId) return;
+      state.repos = repos.filter(repo => !repo.private);
+      renderStats(state.repos, profile);
+      renderRepoWall(state.repos);
+      await populateRepoSelect(state.repos);
+      if (requestId !== state.bootstrapRequestId) return;
+      byId('api-note').textContent = 'Live from GitHub. Repository metadata, folder listings, and read-only text previews are loaded from public API responses.';
+    } catch (error) {
+      if ((error && error.name === 'AbortError') || requestId !== state.bootstrapRequestId) return;
+      setAPIStatus('OFFLINE', 'error');
+      byId('repo-stat').textContent = '—';
+      byId('followers-stat').textContent = '—';
+      byId('latest-stat').textContent = '—';
+      byId('latest-repo').textContent = 'Could not reach GitHub API';
+      byId('live-repo-grid').innerHTML =
+        '<div class="repo-loading glass-panel">' + escapeHTML(error.message) +
+        ' <a href="https://github.com/' + USER + '?tab=repositories" target="_blank" rel="noopener noreferrer">Open GitHub ↗</a></div>';
+      byId('repo-select').innerHTML = '<option value="">GitHub data unavailable</option>';
+      byId('repo-open').href = 'https://github.com/' + USER + '?tab=repositories';
+      byId('breadcrumb').innerHTML = '<span class="crumb-current">/</span><span class="breadcrumb-hint">Waiting for GitHub</span>';
+      byId('file-count').textContent = 'UNAVAILABLE';
+      byId('file-list').innerHTML =
+        '<div class="empty-state"><span>!</span><p>' + escapeHTML(error.message) +
+        '</p><p>The repository list could not be loaded. Check your connection or GitHub’s public API limit, then retry.</p>' +
+        '<a class="text-link" href="https://github.com/' + USER + '?tab=repositories" target="_blank" rel="noopener noreferrer">Open all repositories ↗</a>' +
+        '<button type="button" id="retry-bootstrap">Retry connection</button></div>';
+      byId('api-note').textContent = 'The GitHub API could not be reached. The rest of this portfolio remains available.';
+      renderRepoDetails(null);
+      showEmptyPreview();
+    }
   }
 
   async function boot() {
@@ -328,6 +506,8 @@
     byId('repo-select').addEventListener('change', event => setCurrentRepo(event.target.value));
     byId('file-search').addEventListener('input', () => renderFileList(state.items));
     byId('file-list').addEventListener('click', event => {
+      const bootstrapRetry = event.target.closest('#retry-bootstrap');
+      if (bootstrapRetry) { loadAccountData(); return; }
       const retry = event.target.closest('#retry-path');
       if (retry) { loadPath(state.path); return; }
       const row = event.target.closest('.file-row');
@@ -344,54 +524,17 @@
       const parts = state.path.split('/').filter(Boolean).slice(0, depth);
       loadPath(parts.join('/'));
     });
-    byId('repo-open').addEventListener('click', () => {});
-    byId('dialog-close').addEventListener('click', () => byId('source-dialog').close());
+    byId('dialog-close').addEventListener('click', () => {
+      const dialog = byId('source-dialog');
+      if (typeof dialog.close === 'function') dialog.close();
+    });
     byId('source-dialog').addEventListener('click', event => {
-      if (event.target === byId('source-dialog')) byId('source-dialog').close();
+      if (event.target === byId('source-dialog') && typeof byId('source-dialog').close === 'function') {
+        byId('source-dialog').close();
+      }
     });
 
-    try {
-      const [repos, profile] = await Promise.all([
-        githubFetch(API + '/users/' + USER + '/repos?per_page=100&sort=updated&type=owner'),
-        githubFetch(API + '/users/' + USER)
-      ]);
-      state.repos = repos.filter(repo => !repo.private);
-      renderStats(state.repos, profile);
-      renderRepoWall(state.repos);
-      await populateRepoSelect(state.repos);
-      byId('api-note').textContent = 'Live from GitHub. Public repository names, descriptions, language labels, folder listings, and file previews are requested when this page is used.';
-    } catch (error) {
-      setAPIStatus('OFFLINE', 'error');
-      byId('repo-stat').textContent = '—';
-      byId('followers-stat').textContent = '—';
-      byId('latest-stat').textContent = '—';
-      byId('latest-repo').textContent = 'Could not reach GitHub API';
-      byId('live-repo-grid').innerHTML = '<div class="repo-loading glass-panel">' + escapeHTML(error.message) + ' <a href="https://github.com/' + USER + '?tab=repositories">Open GitHub ↗</a></div>';
-      byId('repo-select').innerHTML = '<option value="">GitHub data unavailable</option>';
-      byId('file-list').innerHTML = '<div class="empty-state"><span>!</span><p>The live repository explorer could not connect. You can still browse the source directly on GitHub.</p><a class="text-link" href="https://github.com/' + USER + '?tab=repositories" target="_blank" rel="noreferrer">Open all repositories ↗</a><button type="button" id="retry-bootstrap">Retry connection</button></div>';
-      byId('file-list').addEventListener('click', async event => {
-        if (event.target.closest('#retry-bootstrap')) {
-          byId('file-list').innerHTML = '<div class="empty-state"><span class="loading-spinner"></span><p>Retrying GitHub connection…</p></div>';
-          await bootRepositoryOnly();
-        }
-      });
-    }
+    await loadAccountData();
   }
-
-  async function bootRepositoryOnly() {
-    try {
-      const [repos, profile] = await Promise.all([
-        githubFetch(API + '/users/' + USER + '/repos?per_page=100&sort=updated&type=owner'),
-        githubFetch(API + '/users/' + USER)
-      ]);
-      state.repos = repos.filter(repo => !repo.private);
-      renderStats(state.repos, profile);
-      renderRepoWall(state.repos);
-      await populateRepoSelect(state.repos);
-    } catch (error) {
-      byId('file-list').innerHTML = '<div class="empty-state"><p>' + escapeHTML(error.message) + '</p><button type="button" id="retry-bootstrap">Try again</button></div>';
-    }
-  }
-
   document.addEventListener('DOMContentLoaded', boot);
 })();
