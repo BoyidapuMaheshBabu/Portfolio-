@@ -107,7 +107,7 @@
     }
   }
 
-  function populateRepoSelect(repos) {
+  async function populateRepoSelect(repos) {
     const select = byId('repo-select');
     const sorted = [...repos].sort((a, b) => {
       const curatedRank = (name) => ({
@@ -122,7 +122,7 @@
     const preferred = sorted.find(repo => repo.name === 'TermRunway-Android') || sorted.find(repo => repo.name !== 'Portfolio-') || sorted[0];
     if (preferred) {
       select.value = preferred.name;
-      setCurrentRepo(preferred.name);
+      await setCurrentRepo(preferred.name);
     }
   }
 
@@ -358,8 +358,7 @@
       state.repos = repos.filter(repo => !repo.private);
       renderStats(state.repos, profile);
       renderRepoWall(state.repos);
-      populateRepoSelect(state.repos);
-      setAPIStatus('LIVE');
+      await populateRepoSelect(state.repos);
       byId('api-note').textContent = 'Live from GitHub. Public repository names, descriptions, language labels, folder listings, and file previews are requested when this page is used.';
     } catch (error) {
       setAPIStatus('OFFLINE', 'error');
@@ -388,8 +387,7 @@
       state.repos = repos.filter(repo => !repo.private);
       renderStats(state.repos, profile);
       renderRepoWall(state.repos);
-      populateRepoSelect(state.repos);
-      setAPIStatus('LIVE');
+      await populateRepoSelect(state.repos);
     } catch (error) {
       byId('file-list').innerHTML = '<div class="empty-state"><p>' + escapeHTML(error.message) + '</p><button type="button" id="retry-bootstrap">Try again</button></div>';
     }
