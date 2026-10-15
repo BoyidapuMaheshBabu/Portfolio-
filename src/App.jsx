@@ -100,8 +100,12 @@ export default function App() {
       const max = document.documentElement.scrollHeight - window.innerHeight;
       document.documentElement.style.setProperty('--scroll-progress', (max > 0 ? window.scrollY / max * 100 : 0) + '%');
     };
+    const observer = new IntersectionObserver(entries => entries.forEach(entry => {
+      if (entry.isIntersecting) { entry.target.classList.add('is-visible'); observer.unobserve(entry.target); }
+    }), { threshold: 0.12 });
+    document.querySelectorAll('[data-reveal]').forEach(el => observer.observe(el));
     window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
-    return () => window.removeEventListener('scroll', onScroll);
+    return () => { window.removeEventListener('scroll', onScroll); observer.disconnect(); };
   }, []);
   const closeMenu = () => setMenuOpen(false);
   return <><div className="scroll-progress" />
