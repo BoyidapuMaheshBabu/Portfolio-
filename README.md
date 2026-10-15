@@ -2,91 +2,65 @@
 
 > **Understand → Build → Test → Improve**
 
-A responsive, source-first portfolio about learning software engineering by investigating problems, building products, testing what works, and improving the implementation. It is a lightweight static website that loads public GitHub data directly in the browser.
+A responsive, source-first portfolio about learning software engineering by investigating problems, building products, testing what works, and improving the implementation. Built with React and Vite, with a live read-only GitHub explorer.
 
 **Repository:** [BoyidapuMaheshBabu/Portfolio-](https://github.com/BoyidapuMaheshBabu/Portfolio-)
 
-## What is included
+## Features
 
-- **Project case studies** covering TermRunway Android, RESUP, Problem-Solving-Logic, and the earlier TermRunway web prototype.
-- **Live GitHub overview** showing public repository count, profile followers, and latest repository push from GitHub API responses.
-- **Interactive repository explorer** to switch between public repositories, navigate folders, use clickable breadcrumbs, search names in the current folder, preview text files, expand previews, and open the original GitHub file.
-- **Responsive UI** with mobile navigation, keyboard focus states, reduced-motion support, and a read-only source dialog.
-- **No framework or build step**: HTML, CSS, and browser JavaScript run as static files.
+- Animated hero, orbital glassmorphism, motion-led project cards, scroll reveals, and responsive navigation.
+- Three grounded project showcases: TermRunway Android, programming problem-solving, and this portfolio.
+- Live public GitHub profile statistics and interactive repository/folder explorer.
+- Keyboard-visible focus styles, mobile layouts, and reduced-motion support.
+- No backend, GitHub token, database, or deployment configuration.
 
-The portfolio aims to represent learning and project work honestly. It does not claim professional software-engineering experience or expertise that has not been established.
+## Stack
 
-## Technology
+- React + Vite
+- CSS animations and responsive layouts
+- Lucide icons
+- GitHub public REST API
 
-| Area | Implementation |
-| --- | --- |
-| Structure | HTML5 |
-| Styling | CSS3, responsive layouts, glassmorphism, reduced-motion rules |
-| Interactions | Vanilla JavaScript |
-| Live data | GitHub public REST API |
-| Local development | Visual Studio Code + Live Server |
-| Build tools | None required |
+## Run locally
 
-## Run locally with VS Code Live Server
+1. Clone or update the repository using GitHub Desktop.
+2. Install a current Node.js LTS release.
+3. Open the repository folder in VS Code.
+4. In the terminal, run:
 
-No `npm install`, build command, API token, or environment file is required.
+   ```bash
+   npm install
+   npm run dev
+   ```
 
-1. Clone or update the existing repository using **GitHub Desktop**.
-2. In VS Code, open the `Portfolio-` project folder.
-3. Install the **Live Server** extension if it is not already installed.
-4. Open `index.html`, right-click in the editor, and choose **Open with Live Server**.
-5. Test the site at the local address opened by the extension (usually `http://127.0.0.1:5500`).
+5. Open the local URL printed by Vite.
 
-Use Live Server rather than opening the HTML as a `file://` URL. The explorer needs an internet connection to contact GitHub's public API. Google Fonts also loads from the network; if that request is unavailable, the local font fallbacks are used.
-
-## Interactive GitHub Explorer
-
-The explorer requests data from GitHub's unauthenticated public API:
-
-- Repository metadata comes from the public repository list; results are paginated so accounts with more than 100 public repositories are not silently reduced to the first page.
-- Folder listings are requested from the selected repository's default branch.
-- Breadcrumbs return to any ancestor folder, and filename search filters the currently loaded folder.
-- Text previews display file content as escaped text. Repository file contents are never inserted as executable HTML.
-- The expanded preview dialog is read-only and links to the original GitHub file. Binary and unsupported files link back to GitHub instead of being interpreted in the page.
-- Loading and error states include retry actions. Request cancellation and request IDs prevent slower responses from a previous repository, folder, or file selection from overwriting the latest selection.
-
-No GitHub token, secret, backend, database, or private repository access is used. The public API has unauthenticated rate limits; if a limit or connectivity error occurs, wait briefly or open the relevant repositories on GitHub and retry later.
-
-## Optional local checks
-
-The website itself needs only Live Server. If Node.js is installed, run these checks from the repository root:
+To check a production build locally:
 
 ```bash
-node --check script.js
-node tests/smoke-check.mjs
+npm run build
+npm run preview
 ```
 
-The smoke check validates local asset references, static DOM IDs used by JavaScript, key explorer safeguards, responsive/reduced-motion rules, and the absence of a repository deployment workflow. It does not replace interactive browser testing of GitHub API behavior.
+The project is intentionally not configured to deploy or publish. It is designed for local development and testing.
 
-## Project structure
+## GitHub Explorer
 
-```text
-Portfolio-/
-├── index.html
-├── styles.css
-├── script.js
-├── favicon.svg
-├── tests/
-│   └── smoke-check.mjs
-└── README.md
-```
+The explorer reads public profile, repository, and folder data from GitHub's unauthenticated API. It does not request private repository access and does not use a personal access token. GitHub's public API rate limits apply. If loading fails, retry later.
 
-## Manual browser checklist
+## React Bits
 
-- [ ] Load the page at desktop and mobile widths; check the navigation menu and section links.
-- [ ] Confirm repository totals and metadata load from GitHub.
-- [ ] Switch repositories quickly and verify that the displayed files belong to the current selection.
-- [ ] Open nested folders, return through breadcrumbs, and search filenames within a folder.
-- [ ] Preview a text file, expand the preview, and open the original file on GitHub.
-- [ ] Test a binary file, an empty/search-miss folder, and retry controls during a connection or API error.
-- [ ] Check keyboard focus, dialog close behavior, and reduced-motion settings.
+The interface uses React component architecture and motion patterns inspired by [DavidHDev/react-bits](https://github.com/DavidHDev/react-bits), a free open-source library of customizable animated React components. See [REACT_BITS_NOTES.md](REACT_BITS_NOTES.md) for the design rationale. No premium components are required.
 
-The website is intentionally **not configured to deploy or publish**. Use the local workflow above for development and testing.
+## Manual test checklist
+
+- [ ] Run `npm install` and `npm run dev`.
+- [ ] Check the navigation and all section links on desktop and mobile.
+- [ ] Confirm the featured project links open the intended GitHub repositories.
+- [ ] Load the GitHub explorer, search repositories, open a folder, and return with breadcrumbs.
+- [ ] Test a slow/offline connection and the GitHub retry control.
+- [ ] Enable reduced motion in OS settings and verify animations are minimized.
+- [ ] Run `npm run build` and resolve any reported errors before treating the migration as complete.
 
 ---
 
