@@ -76,10 +76,11 @@ function GitHubLab() {
     finally { setLoading(false); }
   }
   useEffect(()=>{loadRepos();},[]);
+  useEffect(()=>{if(!expanded)return;const onKeyDown=e=>{if(e.key==='Escape'){setExpanded(false);setOptionsOpen(false);}};window.addEventListener('keydown',onKeyDown);return()=>window.removeEventListener('keydown',onKeyDown);},[expanded]);
   const filtered=useMemo(()=>repos.filter(r=>r.name.toLowerCase().includes(query.toLowerCase())),[repos,query]);
 
   async function openRepo(repo,nextPath='') {
-    setSelected(repo); setPath(nextPath); setFolderLoading(true); setFiles([]);
+    setSelected(repo); setPath(nextPath); setFolderLoading(true); setFiles([]); setExpanded(false);
     setSelectedFile(null); setFileContent(''); setFileError(''); setOptionsOpen(false);
     try {
       const encodedPath=nextPath.split('/').map(encodeURIComponent).join('/');
@@ -139,7 +140,7 @@ function GitHubLab() {
         {selected&&!selectedFile&&<div className="file-list">{folderLoading?<p className="muted">Loading files…</p>:files.map(item=><div key={item.path} className="file-row">{item.type==='dir'?<Folder size={15}/>:<FileCode2 size={15}/>}<button className="file-name-button" disabled={item.type==='message'} onClick={()=>item.type==='dir'?openRepo(selected,item.path):openFile(item)}>{item.name}</button>{item.type==='dir'&&<button onClick={()=>openRepo(selected,item.path)}>Open <ChevronRight size={13}/></button>}{item.type==='file'&&<a href={item.html_url} target="_blank" rel="noreferrer" aria-label={'View '+item.name+' on GitHub'} title="View this exact file on GitHub" className="file-github-link"><GitHubMark size={14}/></a>}</div>)}</div>}
         {selectedFile&&<div className={'code-viewer '+(expanded?'code-viewer-expanded':'')}>
           <div className="code-viewer-toolbar"><div className="code-file-meta"><Code2 size={14}/><span>{selectedFile.path}</span><span className="readonly-pill">READ ONLY</span></div>
-            <div className="code-toolbar-actions"><button className="icon-link code-options-trigger" aria-label="Code options" title="Code options" onClick={()=>setOptionsOpen(!optionsOpen)}><span className="square-options"><span/><span/><span/><span/></span></button>
+            <div className="code-toolbar-actions"><button className="icon-link code-options-trigger" aria-label={expanded?"Restore code viewer":"Expand code viewer"} aria-pressed={expanded} title={expanded?"Restore code viewer":"Expand code viewer"} onClick={()=>setOptionsOpen(!optionsOpen)}><span className="square-options"><span/><span/><span/><span/></span></button>
               {optionsOpen&&<div className="code-options-menu"><button onClick={copyCode}><Code2 size={14}/>{copyLabel}</button><button onClick={downloadCode}><ArrowDownRight size={14}/>Download file</button><button onClick={()=>{setExpanded(!expanded);setOptionsOpen(false);}}><ExternalLink size={14}/>{expanded?'Exit expanded view':'Expand viewer'}</button><a href={selectedFile.html_url} target="_blank" rel="noreferrer" onClick={()=>setOptionsOpen(false)}><GitHubMark size={14}/>Open on GitHub</a></div>}
             </div>
           </div>
