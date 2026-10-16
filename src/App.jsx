@@ -29,6 +29,23 @@ function Reveal({ children, className = '' }) {
   return <div data-reveal className={className}>{children}</div>;
 }
 
+function decodeBase64Utf8(value) {
+  const binary = atob(value.replace(/\s/g, ''));
+  return new TextDecoder().decode(Uint8Array.from(binary, char => char.charCodeAt(0)));
+}
+function highlightLine(line) {
+  const pattern = /(\/\/.*$|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\b(?:const|let|var|function|return|if|else|async|await|try|catch|throw|new|class|import|from|export|default|true|false|null|undefined)\b|\b\d+(?:\.\d+)?\b)/g;
+  const parts = []; let last = 0; let match;
+  while ((match = pattern.exec(line)) !== null) {
+    if (match.index > last) parts.push(line.slice(last, match.index));
+    const token = match[0];
+    const kind = token.startsWith('//') ? 'token-comment' : (token.startsWith('"') || token.startsWith("'")) ? 'token-string' : /^\d/.test(token) ? 'token-number' : 'token-keyword';
+    parts.push(<span className={kind} key={match.index}>{token}</span>);
+    last = match.index + token.length;
+  }
+  if (last < line.length) parts.push(line.slice(last));
+  return parts.length ? parts : ' ';
+}
 function GitHubLab() {
   const [repos, setRepos] = useState([]);
   const [profile, setProfile] = useState(null);
@@ -39,67 +56,102 @@ function GitHubLab() {
   const [files, setFiles] = useState([]);
   const [path, setPath] = useState('');
   const [folderLoading, setFolderLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [fileContent, setFileContent] = useState('');
+  const [fileLoading, setFileLoading] = useState(false);
+  const [fileError, setFileError] = useState('');
+  const [optionsOpen, setOptionsOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [copyLabel, setCopyLabel] = useState('Copy code');
 
   async function loadRepos() {
     setLoading(true); setError('');
     try {
-      const [p, r] = await Promise.all([
-        fetch(`https://api.github.com/users/${USER}`),
-        fetch(`https://api.github.com/users/${USER}/repos?per_page=100&sort=updated`)
-      ]);
+      const [p,r] = await Promise.all([fetch('https://api.github.com/users/'+USER),fetch('https://api.github.com/users/'+USER+'/repos?per_page=100&sort=updated')]);
       if (!p.ok || !r.ok) throw new Error('GitHub is temporarily unavailable or its public API rate limit was reached.');
-      const profileData = await p.json();
-      const repoData = await r.json();
+      const profileData=await p.json(), repoData=await r.json();
       setProfile(profileData);
-      setRepos(repoData.filter(repo => !repo.fork).sort((a,b) => new Date(b.pushed_at) - new Date(a.pushed_at)));
-    } catch (e) { setError(e.message || 'Could not connect to GitHub.'); }
+      setRepos(repoData.filter(repo=>!repo.fork).sort((a,b)=>new Date(b.pushed_at)-new Date(a.pushed_at)));
+    } catch(e) { setError(e.message||'Could not connect to GitHub.'); }
     finally { setLoading(false); }
   }
-  useEffect(() => { loadRepos(); }, []);
-  const filtered = useMemo(() => repos.filter(r => r.name.toLowerCase().includes(query.toLowerCase())), [repos, query]);
+  useEffect(()=>{loadRepos();},[]);
+  useEffect(()=>{if(!expanded)return;const onKeyDown=e=>{if(e.key==='Escape'){setExpanded(false);setOptionsOpen(false);}};window.addEventListener('keydown',onKeyDown);return()=>window.removeEventListener('keydown',onKeyDown);},[expanded]);
+  const filtered=useMemo(()=>repos.filter(r=>r.name.toLowerCase().includes(query.toLowerCase())),[repos,query]);
 
-  async function openRepo(repo, nextPath = '') {
-    setSelected(repo); setPath(nextPath); setFolderLoading(true); setFiles([]);
+  async function openRepo(repo,nextPath='') {
+    setSelected(repo); setPath(nextPath); setFolderLoading(true); setFiles([]); setExpanded(false);
+    setSelectedFile(null); setFileContent(''); setFileError(''); setOptionsOpen(false);
     try {
-      const url = `https://api.github.com/repos/${USER}/${repo.name}/contents/${nextPath}`;
-      const response = await fetch(url);
-      if (!response.ok) throw new Error('Unable to load this folder. Try again in a moment.');
-      const data = await response.json();
-      setFiles(Array.isArray(data) ? data : []);
-    } catch (e) { setFiles([{ name: e.message, type: 'message', path: '' }]); }
+      const encodedPath=nextPath.split('/').map(encodeURIComponent).join('/');
+      const response=await fetch('https://api.github.com/repos/'+USER+'/'+repo.name+'/contents/'+encodedPath);
+      if(!response.ok) throw new Error('Unable to load this folder. Try again in a moment.');
+      const data=await response.json(); setFiles(Array.isArray(data)?data:[]);
+    } catch(e) { setFiles([{name:e.message,type:'message',path:''}]); }
     finally { setFolderLoading(false); }
   }
-  const goUp = () => openRepo(selected, path.split('/').slice(0,-1).join('/'));
+  async function openFile(item) {
+    setSelectedFile(item); setFileContent(''); setFileError(''); setFileLoading(true); setOptionsOpen(false);
+    try {
+      const filePath=item.path.split('/').map(encodeURIComponent).join('/');
+      const response=await fetch('https://api.github.com/repos/'+USER+'/'+selected.name+'/contents/'+filePath);
+      if(!response.ok) throw new Error(response.status===403?'GitHub API rate limit reached. Try again later.':'Could not load this source file.');
+      const data=await response.json();
+      if(typeof data.content==='string' && data.content.trim()) setFileContent(data.encoding==='base64'?decodeBase64Utf8(data.content):data.content);
+      else if(data.download_url) {
+        const raw=await fetch(data.download_url);
+        if(!raw.ok) throw new Error('Could not load the raw file. Open it directly on GitHub.');
+        setFileContent(await raw.text());
+      } else throw new Error('GitHub did not return readable text. Open this file on GitHub instead.');
+    } catch(e) { setFileError(e.message||'Could not load this file.'); }
+    finally { setFileLoading(false); }
+  }
+  async function copyCode() {
+    try { await navigator.clipboard.writeText(fileContent); setCopyLabel('Copied!'); setOptionsOpen(false); window.setTimeout(()=>setCopyLabel('Copy code'),1600); }
+    catch { setCopyLabel('Copy unavailable'); }
+  }
+  function downloadCode() {
+    const url=URL.createObjectURL(new Blob([fileContent],{type:'text/plain;charset=utf-8'}));
+    const anchor=document.createElement('a'); anchor.href=url; anchor.download=selectedFile?.name||'source.txt'; anchor.click(); URL.revokeObjectURL(url); setOptionsOpen(false);
+  }
   return <div className="lab-shell">
     <div className="lab-topline"><span><span className="live-dot" /> LIVE PUBLIC DATA</span><span>GITHUB API / READ ONLY</span></div>
     <div className="lab-stats">
-      <div><span className="stat-label">PUBLIC REPOSITORIES</span><strong>{loading ? '—' : repos.length}</strong></div>
-      <div><span className="stat-label">FOLLOWERS</span><strong>{loading ? '—' : profile?.followers ?? '—'}</strong></div>
-      <div><span className="stat-label">LATEST PUSH</span><strong className="stat-date">{loading ? 'Loading' : repos[0] ? new Date(repos[0].pushed_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'}</strong></div>
+      <div><span className="stat-label">PUBLIC REPOSITORIES</span><strong>{loading?'—':repos.length}</strong></div>
+      <div><span className="stat-label">FOLLOWERS</span><strong>{loading?'—':profile?.followers??'—'}</strong></div>
+      <div><span className="stat-label">LATEST PUSH</span><strong className="stat-date">{loading?'Loading':repos[0]?new Date(repos[0].pushed_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}):'—'}</strong></div>
     </div>
-    <div className="lab-browser">
+    <div className={'lab-browser '+(expanded?'viewer-expanded':'')}>
       <div className="lab-sidebar">
         <div className="lab-browser-title"><Terminal size={15}/><span>Repository explorer</span><button aria-label="Refresh repositories" onClick={loadRepos}><RefreshCw size={14}/></button></div>
         <label className="search-box"><span>⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Find a repository..." /></label>
-        {error && <div className="lab-error">{error}<button onClick={loadRepos}>Retry</button></div>}
-        <div className="repo-list">
-          {loading ? <p className="muted">Loading repositories…</p> : filtered.map(repo => <button key={repo.id} className={'repo-option '+(selected?.id===repo.id?'active':'')} onClick={()=>openRepo(repo)}><Folder size={14}/><span>{repo.name}</span><ChevronRight size={13}/></button>)}
-          {!loading && !error && !filtered.length && <p className="muted">No repositories match.</p>}
+        {error&&<div className="lab-error">{error}<button onClick={loadRepos}>Retry</button></div>}
+        <div className="repo-list">{loading?<p className="muted">Loading repositories…</p>:filtered.map(repo=><button key={repo.id} className={'repo-option '+(selected?.id===repo.id?'active':'')} onClick={()=>openRepo(repo)}><Folder size={14}/><span>{repo.name}</span><ChevronRight size={13}/></button>)}
+          {!loading&&!error&&!filtered.length&&<p className="muted">No repositories match.</p>}
         </div>
         <a className="lab-profile-link" href="https://github.com/BoyidapuMaheshBabu" target="_blank" rel="noreferrer"><GitHubMark size={15}/> Open full GitHub profile <ArrowUpRight size={14}/></a>
       </div>
       <div className="lab-content">
-        <div className="lab-content-head"><div><span className="micro-label">SOURCE EXPLORER</span><h3>{selected?.name || 'Choose a repository'}</h3></div>{selected && <a href={selected.html_url} target="_blank" rel="noreferrer" className="icon-link" aria-label="Open repository on GitHub"><ExternalLink size={16}/></a>}</div>
-        {selected && <div className="breadcrumbs"><button onClick={()=>openRepo(selected,'')}>{selected.name}</button>{path && path.split('/').map((part,i)=><span key={i}> / <button onClick={()=>openRepo(selected,path.split('/').slice(0,i+1).join('/'))}>{part}</button></span>)}</div>}
-        {!selected && <div className="lab-empty"><div className="empty-icon"><GitHubMark size={26}/></div><strong>Your work, directly from source.</strong><p>Select any public repository to browse its files and folders.</p></div>}
-        {selected && <div className="file-list">{folderLoading ? <p className="muted">Loading files…</p> : files.map(item=><div key={item.path} className="file-row">{item.type==='dir'?<Folder size={15}/>:<FileCode2 size={15}/>}<span>{item.name}</span>{item.type==='dir'&&<button onClick={()=>openRepo(selected,item.path)}>Open <ChevronRight size={13}/></button>}{item.type!=='dir'&&item.type!=='message'&&<a href={item.html_url} target="_blank" rel="noreferrer" aria-label={'View '+item.name} ><ExternalLink size={13}/></a>}</div>)}</div>}
+        <div className="lab-content-head"><div><span className="micro-label">{selectedFile?'READ-ONLY SOURCE':'SOURCE EXPLORER'}</span><h3>{selectedFile?.name||selected?.name||'Choose a repository'}</h3></div>
+          {selectedFile?<a href={selectedFile.html_url} target="_blank" rel="noreferrer" className="icon-link github-file-action" aria-label={'Open '+selectedFile.name+' on GitHub'} title="View this exact file on GitHub"><GitHubMark size={17}/></a>:selected&&<a href={selected.html_url} target="_blank" rel="noreferrer" className="icon-link" aria-label="Open repository on GitHub"><ExternalLink size={16}/></a>}
+        </div>
+        {selected&&<div className="breadcrumbs"><button onClick={()=>openRepo(selected,'')}>{selected.name}</button>{path&&path.split('/').map((part,i)=><span key={i}> / <button onClick={()=>openRepo(selected,path.split('/').slice(0,i+1).join('/'))}>{part}</button></span>)}{selectedFile&&<span> / <b>{selectedFile.name}</b></span>}</div>}
+        {!selected&&<div className="lab-empty"><div className="empty-icon"><GitHubMark size={26}/></div><strong>Your work, directly from source.</strong><p>Select any public repository to browse its files and folders.</p></div>}
+        {selected&&!selectedFile&&<div className="file-list">{folderLoading?<p className="muted">Loading files…</p>:files.map(item=><div key={item.path} className="file-row">{item.type==='dir'?<Folder size={15}/>:<FileCode2 size={15}/>}<button className="file-name-button" disabled={item.type==='message'} onClick={()=>item.type==='dir'?openRepo(selected,item.path):openFile(item)}>{item.name}</button>{item.type==='dir'&&<button onClick={()=>openRepo(selected,item.path)}>Open <ChevronRight size={13}/></button>}{item.type==='file'&&<a href={item.html_url} target="_blank" rel="noreferrer" aria-label={'View '+item.name+' on GitHub'} title="View this exact file on GitHub" className="file-github-link"><GitHubMark size={14}/></a>}</div>)}</div>}
+        {selectedFile&&<div className={'code-viewer '+(expanded?'code-viewer-expanded':'')}>
+          <div className="code-viewer-toolbar"><div className="code-file-meta"><Code2 size={14}/><span>{selectedFile.path}</span><span className="readonly-pill">READ ONLY</span></div>
+            <div className="code-toolbar-actions"><button className="icon-link code-options-trigger" aria-label={expanded?"Restore code viewer":"Expand code viewer"} aria-pressed={expanded} title={expanded?"Restore code viewer":"Expand code viewer"} onClick={()=>setOptionsOpen(!optionsOpen)}><span className="square-options"><span/><span/><span/><span/></span></button>
+              {optionsOpen&&<div className="code-options-menu"><button onClick={copyCode}><Code2 size={14}/>{copyLabel}</button><button onClick={downloadCode}><ArrowDownRight size={14}/>Download file</button><button onClick={()=>{setExpanded(!expanded);setOptionsOpen(false);}}><ExternalLink size={14}/>{expanded?'Exit expanded view':'Expand viewer'}</button><a href={selectedFile.html_url} target="_blank" rel="noreferrer" onClick={()=>setOptionsOpen(false)}><GitHubMark size={14}/>Open on GitHub</a></div>}
+            </div>
+          </div>
+          {fileLoading?<div className="code-status"><RefreshCw size={17} className="spin-icon"/> Loading source from GitHub…</div>:fileError?<div className="code-status code-error">{fileError}<a href={selectedFile.html_url} target="_blank" rel="noreferrer">Open on GitHub <ArrowUpRight size={13}/></a></div>:<pre className="source-code" aria-label="Read-only source code"><code>{fileContent.split('\n').map((line,index)=><span className="code-line" key={index}><span className="line-number">{index+1}</span><span className="code-line-text">{highlightLine(line)}</span></span>)}</code></pre>}
+        </div>}
         <div className="lab-footer"><span><CircleDot size={12}/> No token · No private access</span><span>Public repositories only</span></div>
       </div>
     </div>
     <p className="lab-note">Explorer uses GitHub's unauthenticated public API. Rate limits apply; this panel never requests private repository access.</p>
   </div>;
 }
-
 export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [year] = useState(new Date().getFullYear());
