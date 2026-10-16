@@ -1,36 +1,35 @@
-# Mahesh Babu — Portfolio
+# Mahesh Babu — Portfolio 🚀
 
 ![Portfolio social preview](public/og-image.svg)
 
+A responsive personal portfolio showcasing my **engineering journey, selected projects, and practical approach to software development**, built with React and Vite.
+
 > **Understand → Build → Test → Improve**
 
-A responsive personal portfolio built with **React** and **Vite**. It presents my engineering journey, selected projects, and a read-only explorer for browsing public GitHub repositories and source files.
+> 🛠️ **Project status — In active development**
+>
+> This portfolio is currently maintained for **local development and testing**. It is not deployed. The goal is to present my work clearly and make the engineering process behind it easier to explore.
 
-This project is maintained for **local development and testing**. It is not currently deployed.
+## ⭐ Highlights
 
-## Overview
+- **Project showcase** — presents TermRunway Android, programming problem-solving, and this portfolio.
+- **Interactive GitHub Explorer** — browse public repositories and source folders through a read-only interface.
+- **Public GitHub data** — retrieves profile and repository information from GitHub's public API.
+- **Responsive experience** — adapts the layout for desktop and mobile screens.
+- **Motion-led visual design** — uses animated sections, glass-inspired styling, and project-focused layouts.
+- **Accessibility considerations** — includes visible keyboard-focus styles and reduced-motion support.
 
-The portfolio is designed to show both the work and the process behind it: exploring problems, making implementation decisions, building practical software, and improving through testing.
+## 🧰 Technology Stack
 
-### Features
+**React + Vite:** Component-based interface and local development/build tooling.
 
-- **Portfolio presentation** — responsive navigation, animated sections, project cards, and glass-inspired visual styling.
-- **Project highlights** — showcases TermRunway Android, programming problem-solving, and the portfolio itself.
-- **GitHub Explorer** — browse public repository details and source folders through an interactive, read-only interface.
-- **Public profile data** — displays GitHub information retrieved from public API endpoints.
-- **Accessibility considerations** — visible keyboard-focus styles, responsive layouts, and reduced-motion support.
+**CSS:** Responsive layouts, visual styling, and animations.
 
-## Technology Stack
+**Lucide:** Icons used throughout the interface.
 
-| Technology | Purpose |
-|---|---|
-| React | Component-based user interface |
-| Vite | Local development server and build tooling |
-| CSS | Responsive layouts, visual styling, and animations |
-| Lucide | Interface icons |
-| GitHub REST API | Public profile and repository data |
+**GitHub REST API:** Public profile and repository information for the GitHub Explorer.
 
-## Run Locally
+## 🔍 How to Run Locally
 
 ### Prerequisites
 
@@ -39,7 +38,7 @@ The portfolio is designed to show both the work and the process behind it: explo
 
 ### Setup
 
-1. Clone the repository or open your local clone.
+1. Clone the repository or open your existing local clone.
 2. Open the project folder in a terminal.
 3. Install dependencies:
 
@@ -53,48 +52,46 @@ The portfolio is designed to show both the work and the process behind it: explo
    npm run dev
    ```
 
-5. Open the local URL shown in the terminal.
+5. Open the local URL printed in the terminal.
 
-### Build and Preview
-
-Create a production build:
+To create and preview a production build locally:
 
 ```bash
 npm run build
-```
-
-Preview the generated build locally:
-
-```bash
 npm run preview
 ```
 
-## GitHub Explorer: Data and Privacy
+## 🔐 GitHub Explorer: Data & Privacy
 
-The explorer uses GitHub's public, unauthenticated API to retrieve public profile and repository information.
+The explorer uses GitHub's **public, unauthenticated API** to retrieve public profile and repository information.
 
-- No personal access token is required.
-- The project does not use a custom backend or database.
-- It does not provide access to private repositories.
-- Requests may be affected by GitHub's public API rate limits. If data fails to load, retry later.
+- **No personal access token required** — the project does not ask for a GitHub token.
+- **No custom backend or database** — public API requests are made from the portfolio.
+- **Public repositories only** — the explorer does not provide access to private repositories.
+- **Rate limits may apply** — GitHub can limit unauthenticated API requests; retry later if data fails to load.
 
-## Design Acknowledgment
+## 🎨 Design Acknowledgment
 
-Some React motion and component patterns were explored with reference to [React Bits by DavidHDev](https://github.com/DavidHDev/react-bits), an open-source collection of customizable React components. The design rationale is documented in [REACT_BITS_NOTES.md](REACT_BITS_NOTES.md).
+Some component and animation patterns were explored with reference to [React Bits by DavidHDev](https://github.com/DavidHDev/react-bits), an open-source collection of customizable React components.
 
-## Verification
+See [REACT_BITS_NOTES.md](REACT_BITS_NOTES.md) for the design rationale.
 
-When reviewing changes, check the following locally:
+## ✅ Verification Checklist
 
-- Start the app with `npm run dev` and navigate through each section.
-- Test the layout on desktop and mobile screen sizes.
-- Use the GitHub Explorer to search repositories, open a folder, and navigate back through breadcrumbs.
-- Check the interface with reduced motion enabled.
-- Run `npm run build` and address any reported errors.
+- [ ] Run `npm install` and `npm run dev`.
+- [ ] Check the navigation and section links on desktop and mobile.
+- [ ] Open featured project links and confirm they point to the intended repositories.
+- [ ] Search repositories in the GitHub Explorer, open a folder, and navigate back with breadcrumbs.
+- [ ] Enable reduced motion in system settings and check that animations are minimized.
+- [ ] Run `npm run build` and resolve any reported errors.
 
----
-
-## Developer
+## 👨‍💻 About
 
 **Boyidapu Mahesh Babu**  
 Diploma in Computer Science Engineering student
+
+GitHub: [@BoyidapuMaheshBabu](https://github.com/BoyidapuMaheshBabu)
+
+---
+
+**Building practical software. Learning through projects. Improving one iteration at a time.** 🚀
