@@ -34,7 +34,7 @@ for (const name of ['react', 'react-dom', 'lucide-react', 'vite', '@vitejs/plugi
 
 // GitHub Explorer source behavior, error recovery, and safe source rendering.
 assert.match(app, /https:\/\/api\.github\.com\/users\//, 'Explorer must retrieve public GitHub user data');
-assert.match(app, /\/repos\/\+USER\+\/repo\.name\+\/contents\//, 'Explorer must fetch repository contents');
+assert.ok(app.includes("'+repo.name+'/contents/'+encodedPath"), 'Explorer must fetch repository contents');
 assert.match(app, /function openRepo\(/, 'Explorer must support opening folders');
 assert.match(app, /function openFile\(/, 'Explorer must support opening source files');
 assert.match(app, /onClick=\{\(\)=>openRepo\(selected,path\)\}>Retry<\/button>/,
