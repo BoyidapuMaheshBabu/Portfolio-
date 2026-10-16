@@ -33,15 +33,71 @@ function decodeBase64Utf8(value) {
   const binary = atob(value.replace(/\s/g, ''));
   return new TextDecoder().decode(Uint8Array.from(binary, char => char.charCodeAt(0)));
 }
+const CODE_KEYWORDS = new Set([
+  'const','let','var','function','return','if','else','async','await','try','catch','finally',
+  'throw','new','class','extends','import','from','export','default','true','false','null',
+  'undefined','typeof','instanceof','in','of','for','while','do','switch','case','break',
+  'continue','this','super','delete','void','yield','static','get','set','as','interface',
+  'type','public','private','protected','implements','enum','def','pass','lambda','and','or',
+  'not','None','True','False','with','except','raise','elif','package','func','struct','go',
+  'select','defer','chan','map','range','var'
+]);
+const CODE_BUILTINS = new Set([
+  'console','Math','Date','Array','Object','JSON','Promise','Error','String','Number','Boolean',
+  'Set','Map','RegExp','Intl','URL','Blob','TextDecoder','Uint8Array','fetch','window','document',
+  'navigator','localStorage','sessionStorage','React','useState','useEffect','useMemo','useCallback'
+]);
 function highlightLine(line) {
-  const pattern = /(\/\/.*$|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\b(?:const|let|var|function|return|if|else|async|await|try|catch|throw|new|class|import|from|export|default|true|false|null|undefined)\b|\b\d+(?:\.\d+)?\b)/g;
-  const parts = []; let last = 0; let match;
+  const pattern = /(\/\/.*$|\/\*.*?\*\/|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\x60(?:\\.|[^\x60\\])*\x60|\b\d+(?:\.\d+)?\b|[A-Za-z_$][\w$]*|<\/?|\/?>|=>|===?|!==?|&&|\|\||[=+*%!?<>:&|.-])/g;
+  const parts = [];
+  let last = 0;
+  let match;
   while ((match = pattern.exec(line)) !== null) {
-    if (match.index > last) parts.push(line.slice(last, match.index));
+    const index = match.index;
     const token = match[0];
-    const kind = token.startsWith('//') ? 'token-comment' : (token.startsWith('"') || token.startsWith("'")) ? 'token-string' : /^\d/.test(token) ? 'token-number' : 'token-keyword';
-    parts.push(<span className={kind} key={match.index}>{token}</span>);
-    last = match.index + token.length;
+    if (index > last) parts.push(line.slice(last, index));
+    const before = line.slice(0, index);
+    const after = line.slice(index + token.length);
+    let kind = 'token-operator';
+
+    if (token.startsWith('//') || token.startsWith('/*')) {
+      kind = 'token-comment';
+    } else if (token.startsWith('"') || token.startsWith("'") || token.charCodeAt(0) === 96) {
+      kind = 'token-string';
+    } else if (/^\d/.test(token)) {
+      kind = 'token-number';
+    } else if (/^(<\/?|\/?>)$/.test(token)) {
+      kind = 'token-punctuation';
+    } else if (/^(=>|===?|!==?|&&|\|\||[=+*%!?<>:&|.-])$/.test(token)) {
+      kind = 'token-operator';
+    } else if (CODE_KEYWORDS.has(token)) {
+      kind = 'token-keyword';
+    } else if (CODE_BUILTINS.has(token)) {
+      kind = 'token-builtin';
+    } else {
+      const tagStart = before.lastIndexOf('<');
+      const tagEnd = before.lastIndexOf('>');
+      const inTag = tagStart > tagEnd;
+      const tagPrefix = inTag ? before.slice(tagStart) : '';
+      const firstTagName = /^<\/?\s*$/.test(tagPrefix);
+      if (inTag && firstTagName) {
+        kind = 'token-tag';
+      } else if (inTag && /^\s*=/.test(after)) {
+        kind = 'token-attribute';
+      } else if (/\bfunction\s+$/.test(before) || /^\s*\(/.test(after) ||
+        /^\s*=\s*(?:async\s*)?(?:\([^)]*\)|[A-Za-z_$][\w$]*)\s*=>/.test(after)) {
+        kind = 'token-function';
+      } else if (/\b(?:const|let|var)\s+$/.test(before)) {
+        kind = 'token-variable';
+      } else if (/\.\s*$/.test(before)) {
+        kind = 'token-property';
+      } else {
+        kind = 'token-identifier';
+      }
+    }
+
+    parts.push(<span className={kind} key={index}>{token}</span>);
+    last = index + token.length;
   }
   if (last < line.length) parts.push(line.slice(last));
   return parts.length ? parts : ' ';
