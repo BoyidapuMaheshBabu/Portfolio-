@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - feat/radiant-blue-dark-explorer
+      - feat/radiant-blue-white-portfolio
   pull_request:
     branches:
       - main
