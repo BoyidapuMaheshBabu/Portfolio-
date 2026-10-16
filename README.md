@@ -1,9 +1,5 @@
 # Mahesh Babu — Portfolio
 
-<p align="center">
-  <img src="public/favicon.svg" width="64" height="64" alt="Mahesh Babu portfolio favicon" />
-</p>
-
 ![Portfolio social preview](public/og-image.svg)
 
 > **Understand → Build → Test → Improve**
