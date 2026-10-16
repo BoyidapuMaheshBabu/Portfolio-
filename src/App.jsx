@@ -13,7 +13,7 @@ const USER = 'BoyidapuMaheshBabu';
 const FEATURED = [
   { name: 'TermRunway-Android', number: '01', type: 'PRODUCT / ANDROID', title: 'Money, with a plan.', description: 'An offline-first student finance tracker built around daily spending and semester planning.', stack: ['Android', 'Kotlin', 'Local-first'], icon: Smartphone, url: 'https://github.com/BoyidapuMaheshBabu/TermRunway-Android', color: 'violet' },
   { name: 'Problem-Solving-Logic', number: '02', type: 'LEARNING / ENGINEERING', title: 'Think in logic.', description: 'A growing record of programming exercises, experiments, and the reasoning behind each solution.', stack: ['Python', 'Problem solving', 'Git'], icon: BrainCircuit, url: 'https://github.com/BoyidapuMaheshBabu/Problem-Solving-Logic', color: 'mint' },
-  { name: 'Portfolio-', number: '03', type: 'WEB / EXPERIMENT', title: 'Make the work visible.', description: 'This portfolio: a hands-on experiment in interface design, React, motion, and GitHub integration.', stack: ['React', 'Vite', 'React Bits-inspired motion'], icon: Code2, url: 'https://github.com/BoyidapuMaheshBabu/Portfolio-', color: 'blue' }
+  { name: 'mahesh-babu-portfolio', number: '03', type: 'WEB / PORTFOLIO', title: 'Make the work visible.', description: 'This portfolio—a source-first React + Vite project with a read-only GitHub Explorer.', stack: ['React', 'Vite', 'GitHub Explorer'], icon: Code2, url: 'https://github.com/BoyidapuMaheshBabu/mahesh-babu-portfolio', color: 'blue' }
 ];
 
 function Reveal({ children, className = '' }) {
@@ -110,6 +110,7 @@ function GitHubLab() {
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState(null);
   const [files, setFiles] = useState([]);
+  const [folderError, setFolderError] = useState('');
   const [path, setPath] = useState('');
   const [folderLoading, setFolderLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -120,31 +121,41 @@ function GitHubLab() {
   const [expanded, setExpanded] = useState(false);
   const [copyLabel, setCopyLabel] = useState('Copy code');
 
-  async function loadRepos() {
+  async function loadRepos(signal) {
     setLoading(true); setError('');
     try {
-      const [p,r] = await Promise.all([fetch('https://api.github.com/users/'+USER),fetch('https://api.github.com/users/'+USER+'/repos?per_page=100&sort=updated')]);
+      const options = signal ? { signal } : undefined;
+      const [p,r] = await Promise.all([fetch('https://api.github.com/users/'+USER, options),fetch('https://api.github.com/users/'+USER+'/repos?per_page=100&sort=updated', options)]);
       if (!p.ok || !r.ok) throw new Error('GitHub is temporarily unavailable or its public API rate limit was reached.');
       const profileData=await p.json(), repoData=await r.json();
       setProfile(profileData);
       setRepos(repoData.filter(repo=>!repo.fork).sort((a,b)=>new Date(b.pushed_at)-new Date(a.pushed_at)));
-    } catch(e) { setError(e.message||'Could not connect to GitHub.'); }
-    finally { setLoading(false); }
+    } catch(e) {
+      if (e.name !== 'AbortError') setError(e.message||'Could not connect to GitHub.');
+    } finally {
+      if (!signal?.aborted) setLoading(false);
+    }
   }
-  useEffect(()=>{loadRepos();},[]);
+  useEffect(()=>{
+    const controller = new AbortController();
+    void loadRepos(controller.signal);
+    return () => controller.abort();
+  }, []);
   useEffect(()=>{if(!expanded)return;const onKeyDown=e=>{if(e.key==='Escape'){setExpanded(false);setOptionsOpen(false);}};window.addEventListener('keydown',onKeyDown);return()=>window.removeEventListener('keydown',onKeyDown);},[expanded]);
   const filtered=useMemo(()=>repos.filter(r=>r.name.toLowerCase().includes(query.toLowerCase())),[repos,query]);
 
   async function openRepo(repo,nextPath='') {
-    setSelected(repo); setPath(nextPath); setFolderLoading(true); setFiles([]); setExpanded(false);
+    setSelected(repo); setPath(nextPath); setFolderLoading(true); setFiles([]); setFolderError(''); setExpanded(false);
     setSelectedFile(null); setFileContent(''); setFileError(''); setOptionsOpen(false);
     try {
       const encodedPath=nextPath.split('/').map(encodeURIComponent).join('/');
       const response=await fetch('https://api.github.com/repos/'+USER+'/'+repo.name+'/contents/'+encodedPath);
       if(!response.ok) throw new Error('Unable to load this folder. Try again in a moment.');
       const data=await response.json(); setFiles(Array.isArray(data)?data:[]);
-    } catch(e) { setFiles([{name:e.message,type:'message',path:''}]); }
-    finally { setFolderLoading(false); }
+    } catch(e) {
+      setFiles([]);
+      setFolderError(e.message || 'Unable to load this folder. Try again in a moment.');
+    } finally { setFolderLoading(false); }
   }
   async function openFile(item) {
     setSelectedFile(item); setFileContent(''); setFileError(''); setFileLoading(true); setOptionsOpen(false);
@@ -168,7 +179,7 @@ function GitHubLab() {
   }
   function downloadCode() {
     const url=URL.createObjectURL(new Blob([fileContent],{type:'text/plain;charset=utf-8'}));
-    const anchor=document.createElement('a'); anchor.href=url; anchor.download=selectedFile?.name||'source.txt'; anchor.click(); URL.revokeObjectURL(url); setOptionsOpen(false);
+    const anchor=document.createElement('a'); anchor.href=url; anchor.download=selectedFile?.name||'source.txt'; anchor.click(); window.setTimeout(()=>URL.revokeObjectURL(url),1000); setOptionsOpen(false);
   }
   return <div className="lab-shell">
     <div className="lab-topline"><span><span className="live-dot" /> LIVE PUBLIC DATA</span><span>GITHUB API / READ ONLY</span></div>
@@ -179,7 +190,7 @@ function GitHubLab() {
     </div>
     <div className={'lab-browser '+(expanded?'viewer-expanded':'')}>
       <div className="lab-sidebar">
-        <div className="lab-browser-title"><Terminal size={15}/><span>Repository explorer</span><button aria-label="Refresh repositories" onClick={loadRepos}><RefreshCw size={14}/></button></div>
+        <div className="lab-browser-title"><Terminal size={15}/><span>Repository explorer</span><button aria-label="Refresh repositories" onClick={()=>loadRepos()}><RefreshCw size={14}/></button></div>
         <label className="search-box"><span>⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Find a repository..." /></label>
         {error&&<div className="lab-error">{error}<button onClick={loadRepos}>Retry</button></div>}
         <div className="repo-list">{loading?<p className="muted">Loading repositories…</p>:filtered.map(repo=><button key={repo.id} className={'repo-option '+(selected?.id===repo.id?'active':'')} onClick={()=>openRepo(repo)}><Folder size={14}/><span>{repo.name}</span><ChevronRight size={13}/></button>)}
@@ -193,7 +204,7 @@ function GitHubLab() {
         </div>
         {selected&&<div className="breadcrumbs"><button onClick={()=>openRepo(selected,'')}>{selected.name}</button>{path&&path.split('/').map((part,i)=><span key={i}> / <button onClick={()=>openRepo(selected,path.split('/').slice(0,i+1).join('/'))}>{part}</button></span>)}{selectedFile&&<span> / <b>{selectedFile.name}</b></span>}</div>}
         {!selected&&<div className="lab-empty"><div className="empty-icon"><GitHubMark size={26}/></div><strong>Your work, directly from source.</strong><p>Select any public repository to browse its files and folders.</p></div>}
-        {selected&&!selectedFile&&<div className="file-list">{folderLoading?<p className="muted">Loading files…</p>:files.map(item=><div key={item.path} className="file-row">{item.type==='dir'?<Folder size={15}/>:<FileCode2 size={15}/>}<button className="file-name-button" disabled={item.type==='message'} onClick={()=>item.type==='dir'?openRepo(selected,item.path):openFile(item)}>{item.name}</button>{item.type==='dir'&&<button onClick={()=>openRepo(selected,item.path)}>Open <ChevronRight size={13}/></button>}{item.type==='file'&&<a href={item.html_url} target="_blank" rel="noreferrer" aria-label={'View '+item.name+' on GitHub'} title="View this exact file on GitHub" className="file-github-link"><GitHubMark size={14}/></a>}</div>)}</div>}
+        {selected&&!selectedFile&&<div className="file-list">{folderLoading?<p className="muted">Loading files…</p>:folderError?<div className="lab-error">{folderError}<button onClick={()=>openRepo(selected,path)}>Retry</button></div>:files.map(item=><div key={item.path} className="file-row">{item.type==='dir'?<Folder size={15}/>:<FileCode2 size={15}/>}<button className="file-name-button" disabled={item.type==='message'} onClick={()=>item.type==='dir'?openRepo(selected,item.path):openFile(item)}>{item.name}</button>{item.type==='dir'&&<button onClick={()=>openRepo(selected,item.path)}>Open <ChevronRight size={13}/></button>}{item.type==='file'&&<a href={item.html_url} target="_blank" rel="noreferrer" aria-label={'View '+item.name+' on GitHub'} title="View this exact file on GitHub" className="file-github-link"><GitHubMark size={14}/></a>}</div>)}</div>}
         {selectedFile&&<div className={'code-viewer '+(expanded?'code-viewer-expanded':'')}>
           <div className="code-viewer-toolbar"><div className="code-file-meta"><Code2 size={14}/><span>{selectedFile.path}</span><span className="readonly-pill">READ ONLY</span></div>
             <div className="code-toolbar-actions"><button className="icon-link code-options-trigger" aria-label={expanded?"Restore code viewer":"Expand code viewer"} aria-pressed={expanded} title={expanded?"Restore code viewer":"Expand code viewer"} onClick={()=>setOptionsOpen(!optionsOpen)}><span className="square-options"><span/><span/><span/><span/></span></button>
