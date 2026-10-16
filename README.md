@@ -1,10 +1,16 @@
 # Mahesh Babu — Portfolio
 
+<p align="center">
+  <img src="favicon.svg" width="64" height="64" alt="Mahesh Babu portfolio favicon" />
+</p>
+
+![Portfolio social preview](public/og-image.svg)
+
 > **Understand → Build → Test → Improve**
 
 A responsive, source-first portfolio about learning software engineering by investigating problems, building products, testing what works, and improving the implementation. Built with React and Vite, with a live read-only GitHub explorer.
 
-**Repository:** [BoyidapuMaheshBabu/Portfolio-](https://github.com/BoyidapuMaheshBabu/Portfolio-)
+**Repository:** [BoyidapuMaheshBabu/mahesh-babu-portfolio](https://github.com/BoyidapuMaheshBabu/mahesh-babu-portfolio)
 
 ## Features
 
