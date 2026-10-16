@@ -6,40 +6,54 @@ import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const read = (path) => readFile(resolve(root, path), 'utf8');
-const [html, js, css] = await Promise.all([
+
+const [html, entry, app, css, packageText, viteConfig] = await Promise.all([
   read('index.html'),
-  read('script.js'),
-  read('styles.css')
+  read('src/main.jsx'),
+  read('src/App.jsx'),
+  read('src/styles.css'),
+  read('package.json'),
+  read('vite.config.js')
 ]);
+const packageJson = JSON.parse(packageText);
 
-const ids = new Set([...html.matchAll(/\bid=["']([^"']+)["']/g)].map((match) => match[1]));
-const dynamicallyCreatedIds = new Set(['repo-detail', 'retry-path', 'retry-bootstrap', 'show-full-source']);
-const referencedIds = new Set([...js.matchAll(/byId\(['"]([^'"]+)['"]\)/g)].map((match) => match[1]));
-const missingIds = [...referencedIds].filter((id) => !ids.has(id) && !dynamicallyCreatedIds.has(id));
-
-assert.equal(missingIds.length, 0, 'JavaScript references missing HTML IDs: ' + missingIds.join(', '));
-assert.match(html, /href=["']styles\.css["']/, 'HTML must reference the local stylesheet');
-assert.match(html, /src=["']script\.js["']/, 'HTML must reference the local script');
-assert.match(html, /href=["']favicon\.svg["']/, 'HTML must reference the local favicon');
-await Promise.all(['styles.css', 'script.js', 'favicon.svg'].map(async (path) => {
-  await access(resolve(root, path), constants.R_OK);
-}));
-
-assert.match(js, /fetchPublicRepos/, 'Explorer must load the public repository list');
-assert.match(js, /\/contents/, 'Explorer must request real repository contents');
-assert.match(js, /AbortController/, 'Explorer requests must support cancellation');
-assert.match(js, /escapeHTML\(line\)/, 'File preview lines must be escaped before rendering');
-assert.match(js, /source-code'\)\.textContent = text/, 'Expanded preview must render text, not execute file HTML');
-assert.match(js, /retry-path/, 'Folder errors must offer retry');
-assert.match(js, /retry-bootstrap/, 'Startup errors must offer retry');
-assert.match(css, /@media\(max-width:640px\)/, 'Styles must include a mobile layout');
-assert.match(css, /prefers-reduced-motion:reduce/, 'Styles must respect reduced-motion preferences');
-
-try {
-  await access(resolve(root, '.github/workflows/deploy.yml'), constants.F_OK);
-  assert.fail('A deployment workflow is still present');
-} catch (error) {
-  if (error.code !== 'ENOENT') throw error;
+// Vite/React entry point and project configuration.
+assert.match(html, /<div id="root"><\/div>/, 'HTML must provide the React root');
+assert.match(html, /src="\/src\/main\.jsx"/, 'HTML must load the Vite React entry point');
+assert.match(html, /href="\.\/favicon\.svg"/, 'HTML must reference the project favicon');
+assert.match(entry, /createRoot\(document\.getElementById\('root'\)\)/, 'React must mount to the root element');
+assert.match(entry, /import '\.\/styles\.css'/, 'React entry point must import the active stylesheet');
+assert.match(viteConfig, /@vitejs\/plugin-react/, 'Vite must configure the React plugin');
+assert.equal(packageJson.scripts.test, 'node tests/smoke-check.mjs', 'npm test must run this smoke check');
+assert.equal(packageJson.dependencies.react, packageJson.dependencies['react-dom'], 'React and React DOM versions must match');
+for (const name of ['react', 'react-dom', 'lucide-react', 'vite', '@vitejs/plugin-react']) {
+  const version = packageJson.dependencies[name] ?? packageJson.devDependencies[name];
+  assert.ok(version && !version.includes('latest') && !version.startsWith('^') && !version.startsWith('~'),
+    name + ' must use a pinned version');
 }
 
-console.log('Portfolio smoke checks passed: assets, DOM references, explorer safeguards, responsive rules, and no deployment workflow.');
+// GitHub Explorer source behavior, error recovery, and safe source rendering.
+assert.match(app, /https:\/\/api\.github\.com\/users\//, 'Explorer must retrieve public GitHub user data');
+assert.match(app, /\/repos\/\+USER\+\/repo\.name\+\/contents\//, 'Explorer must fetch repository contents');
+assert.match(app, /function openRepo\(/, 'Explorer must support opening folders');
+assert.match(app, /function openFile\(/, 'Explorer must support opening source files');
+assert.match(app, /onClick=\{\(\)=>openRepo\(selected,path\)\}>Retry<\/button>/,
+  'Folder-loading errors must offer a retry action');
+assert.match(app, /aria-label="Read-only source code"/, 'Source preview must be labeled for assistive technology');
+assert.match(app, /highlightLine\(line\)/, 'Source preview must apply syntax highlighting');
+assert.doesNotMatch(app, /dangerouslySetInnerHTML/, 'Source files must not be injected as executable HTML');
+assert.match(app, /https:\/\/github\.com\/BoyidapuMaheshBabu\/mahesh-babu-portfolio/,
+  'The portfolio project card must link to this repository');
+assert.match(app, /setTimeout\(\(\)=>URL\.revokeObjectURL\(url\),1000\)/,
+  'Download object URLs should be revoked after the browser can start the download');
+
+// Responsive layout, motion preferences, and required public assets.
+assert.match(css, /@media\(max-width:680px\)/, 'Styles must include a mobile layout');
+assert.match(css, /prefers-reduced-motion:reduce/, 'Styles must respect reduced-motion preferences');
+await Promise.all([
+  'favicon.svg',
+  'public/og-image.svg',
+  '.gitignore'
+].map((path) => access(resolve(root, path), constants.R_OK)));
+
+console.log('Portfolio smoke checks passed: React/Vite wiring, pinned dependencies, GitHub Explorer safeguards, retry handling, responsive styles, and assets.');
