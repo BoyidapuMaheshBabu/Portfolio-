@@ -13,10 +13,11 @@ A responsive personal portfolio showcasing my **engineering journey, selected pr
 ## ⭐ Highlights
 
 - **Project showcase** — presents TermRunway Android, programming problem-solving, and this portfolio.
+- **TermRunway case study** — traces the problem, the one-entry/two-view product decision, the offline-first implementation, and a physical-device check.
 - **Interactive GitHub Explorer** — browse public repositories and source folders through a read-only interface.
 - **Public GitHub data** — retrieves profile and repository information from GitHub's public API.
 - **Responsive experience** — adapts the layout for desktop and mobile screens.
-- **Motion-led visual design** — uses animated sections, glass-inspired styling, and project-focused layouts.
+- **Radiant blue-white visual design** — uses a soft gradient surface, restrained motion, and a dedicated dark code workspace with syntax highlighting.
 - **Accessibility considerations** — includes visible keyboard-focus styles and reduced-motion support.
 
 ## 🧰 Technology Stack
