@@ -22,6 +22,19 @@
 .token-keyword{color:#c5a8ff}.token-string{color:#a6e3a1}.token-number{color:#f4bd8a}.token-comment{color:#77768f;font-style:italic}
 .code-status{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;min-height:190px;padding:24px;color:#aaa5c2;text-align:center;font-size:11px}.code-status a{display:inline-flex;align-items:center;gap:5px;color:var(--mint)}.code-error{color:#f0b7bd}
 .spin-icon{animation:code-spin 1s linear infinite;color:var(--violet)}@keyframes code-spin{to{transform:rotate(360deg)}}
-.lab-browser.viewer-expanded{position:fixed;z-index:120;inset:16px;min-height:0;height:calc(100dvh - 32px);grid-template-columns:260px minmax(0,1fr);background:#0d0e18;box-shadow:0 0 0 100vmax #03040be8}
-.viewer-expanded .lab-content{overflow:auto;min-height:0}.viewer-expanded .code-viewer{display:flex;flex-direction:column;min-height:0;height:calc(100% - 120px)}.viewer-expanded .source-code{max-height:none;flex:1;min-height:0}
-@media(max-width:700px){.code-viewer{margin-inline:6px}.code-viewer-toolbar{padding-left:9px}.code-file-meta{gap:6px;font-size:9px}.readonly-pill{font-size:7px}.source-code{font-size:10px;max-height:440px}.line-number{width:36px;padding-right:9px;margin-right:10px}.lab-browser.viewer-expanded{inset:7px;grid-template-columns:130px minmax(0,1fr);height:calc(100dvh - 14px)}.viewer-expanded .lab-browser-title{padding-inline:8px}.viewer-expanded .lab-browser-title span{font-size:9px}.viewer-expanded .repo-option{padding-inline:7px}.viewer-expanded .lab-footer{padding-inline:8px;font-size:7px}}
+/* Expand the source workspace in normal page flow; never cover the portfolio. */
+.lab-browser.viewer-expanded{position:relative;z-index:auto;inset:auto;min-height:0;height:auto;grid-template-columns:minmax(0,1fr);background:#0d0e18;box-shadow:none}
+.viewer-expanded .lab-sidebar{display:none}
+.viewer-expanded .lab-content{overflow:visible;min-height:0;width:100%}
+.viewer-expanded .code-viewer{display:flex;flex-direction:column;min-height:0;height:auto}
+.viewer-expanded .source-code{max-height:min(72vh,900px);min-height:320px;flex:initial}
+@media(max-width:700px){
+  .code-viewer{margin-inline:6px}
+  .code-viewer-toolbar{padding-left:9px}
+  .code-file-meta{gap:6px;font-size:9px}
+  .readonly-pill{font-size:7px}
+  .source-code{font-size:10px;max-height:440px}
+  .line-number{width:36px;padding-right:9px;margin-right:10px}
+  .lab-browser.viewer-expanded{grid-template-columns:minmax(0,1fr);height:auto}
+  .viewer-expanded .source-code{max-height:min(65vh,650px);min-height:240px}
+}
