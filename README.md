@@ -1,67 +1,103 @@
-# Mahesh Babu — Portfolio
+# Mahesh Babu — Portfolio 🚀
+
+![Portfolio social preview](public/og-image.svg)
+
+A responsive personal portfolio showcasing my **engineering journey, selected projects, and practical approach to software development**, built with React and Vite.
 
 > **Understand → Build → Test → Improve**
 
-A responsive, source-first portfolio about learning software engineering by investigating problems, building products, testing what works, and improving the implementation. Built with React and Vite, with a live read-only GitHub explorer.
+> 🛠️ **Project status — In active development**
+>
+> This portfolio is currently maintained for **local development and testing**. It is not deployed. The goal is to present my work clearly and make the engineering process behind it easier to explore.
 
-**Repository:** [BoyidapuMaheshBabu/Portfolio-](https://github.com/BoyidapuMaheshBabu/Portfolio-)
+## ⭐ Highlights
 
-## Features
+- **Project showcase** — presents TermRunway Android, programming problem-solving, and this portfolio.
+- **Interactive GitHub Explorer** — browse public repositories and source folders through a read-only interface.
+- **Public GitHub data** — retrieves profile and repository information from GitHub's public API.
+- **Responsive experience** — adapts the layout for desktop and mobile screens.
+- **Motion-led visual design** — uses animated sections, glass-inspired styling, and project-focused layouts.
+- **Accessibility considerations** — includes visible keyboard-focus styles and reduced-motion support.
 
-- Animated hero, orbital glassmorphism, motion-led project cards, scroll reveals, and responsive navigation.
-- Three grounded project showcases: TermRunway Android, programming problem-solving, and this portfolio.
-- Live public GitHub profile statistics and interactive repository/folder explorer.
-- Keyboard-visible focus styles, mobile layouts, and reduced-motion support.
-- No backend, GitHub token, database, or deployment configuration.
+## 🧰 Technology Stack
 
-## Stack
+**React + Vite:** Component-based interface and local development/build tooling.
 
-- React + Vite
-- CSS animations and responsive layouts
-- Lucide icons
-- GitHub public REST API
+**CSS:** Responsive layouts, visual styling, and animations.
 
-## Run locally
+**Lucide:** Icons used throughout the interface.
 
-1. Clone or update the repository using GitHub Desktop.
-2. Install a current Node.js LTS release.
-3. Open the repository folder in VS Code.
-4. In the terminal, run:
+**GitHub REST API:** Public profile and repository information for the GitHub Explorer.
+
+## 🔍 How to Run Locally
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) with npm
+- [Git](https://git-scm.com/) or GitHub Desktop
+
+### Setup
+
+1. Clone the repository or open your existing local clone.
+2. Open the project folder in a terminal.
+3. Install dependencies:
 
    ```bash
    npm install
+   ```
+
+4. Start the development server:
+
+   ```bash
    npm run dev
    ```
 
-5. Open the local URL printed by Vite.
+5. Open the local URL printed in the terminal.
 
-To check a production build locally:
+Run the repository smoke checks:
+
+```bash
+npm test
+```
+
+To create and preview a production build locally:
 
 ```bash
 npm run build
 npm run preview
 ```
 
-The project is intentionally not configured to deploy or publish. It is designed for local development and testing.
+## 🔐 GitHub Explorer: Data & Privacy
 
-## GitHub Explorer
+The explorer uses GitHub's **public, unauthenticated API** to retrieve public profile and repository information.
 
-The explorer reads public profile, repository, and folder data from GitHub's unauthenticated API. It does not request private repository access and does not use a personal access token. GitHub's public API rate limits apply. If loading fails, retry later.
+- **No personal access token required** — the project does not ask for a GitHub token.
+- **No custom backend or database** — public API requests are made from the portfolio.
+- **Public repositories only** — the explorer does not provide access to private repositories.
+- **Rate limits may apply** — GitHub can limit unauthenticated API requests; retry later if data fails to load.
 
-## React Bits
+## 🎨 Design Acknowledgment
 
-The interface uses React component architecture and motion patterns inspired by [DavidHDev/react-bits](https://github.com/DavidHDev/react-bits), a free open-source library of customizable animated React components. See [REACT_BITS_NOTES.md](REACT_BITS_NOTES.md) for the design rationale. No premium components are required.
+Some component and animation patterns were explored with reference to [React Bits by DavidHDev](https://github.com/DavidHDev/react-bits), an open-source collection of customizable React components.
 
-## Manual test checklist
+See [REACT_BITS_NOTES.md](REACT_BITS_NOTES.md) for the design rationale.
+
+## ✅ Verification Checklist
 
 - [ ] Run `npm install` and `npm run dev`.
-- [ ] Check the navigation and all section links on desktop and mobile.
-- [ ] Confirm the featured project links open the intended GitHub repositories.
-- [ ] Load the GitHub explorer, search repositories, open a folder, and return with breadcrumbs.
-- [ ] Test a slow/offline connection and the GitHub retry control.
-- [ ] Enable reduced motion in OS settings and verify animations are minimized.
-- [ ] Run `npm run build` and resolve any reported errors before treating the migration as complete.
+- [ ] Check the navigation and section links on desktop and mobile.
+- [ ] Open featured project links and confirm they point to the intended repositories.
+- [ ] Search repositories in the GitHub Explorer, open a folder, and navigate back with breadcrumbs.
+- [ ] Enable reduced motion in system settings and check that animations are minimized.
+- [ ] Run `npm run build` and resolve any reported errors.
+
+## 👨‍💻 About
+
+**Boyidapu Mahesh Babu**  
+Diploma in Computer Science Engineering student
+
+GitHub: [@BoyidapuMaheshBabu](https://github.com/BoyidapuMaheshBabu)
 
 ---
 
-**Built to make the process visible—not just the finished screen.**
+**Building practical software. Learning through projects. Improving one iteration at a time.** 🚀
