@@ -65,5 +65,5 @@ assert.match(app, /FEATURED CASE STUDY/, 'The project case study must be labeled
 assert.match(app, /A single expense entry supports daily activity and plan tracking/, 'The case study must explain the core product decision');
 assert.match(app, /The 1\.0\.0-debug build was installed on a physical Android phone over USB/, 'The case study must state the concrete device check');
 assert.match(app, /not public adoption/, 'The case study must distinguish a working build from user adoption');
-assert.match(css, /\.case-study-steps\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)\}/, 'Case study proof cards must use a responsive two-column layout');
+assert.match(css, /\.case-study-steps\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)\}/, 'Case study proof cards must use a responsive two-column layout');
 assert.match(css, /@media\(max-width:500px\)[\s\S]*?\.case-study-steps\{grid-template-columns:minmax\(0,1fr\)\}/, 'Case study cards must stack on narrow screens');
