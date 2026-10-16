@@ -54,6 +54,12 @@ A responsive personal portfolio showcasing my **engineering journey, selected pr
 
 5. Open the local URL printed in the terminal.
 
+Run the repository smoke checks:
+
+```bash
+npm test
+```
+
 To create and preview a production build locally:
 
 ```bash
