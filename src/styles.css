@@ -294,11 +294,3 @@ em{color:#2879df}
   .hero-description{color:#4d657e}
   .lab-shell .source-code{font-size:11px}
 }
-
-/* Keep the complete hero focus label visible above the floating card. */
-.visual-label.label-top{
-  top:-18px;
-  left:0;
-  z-index:2;
-  white-space:nowrap;
-}
