@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#9BCBFF"/>
+      <stop offset=".42" stop-color="#EAF7FF"/>
+      <stop offset=".72" stop-color="#F8FBFF"/>
+      <stop offset="1" stop-color="#DDD9FF"/>
+    </linearGradient>
+    <radialGradient id="blueGlow" cx="0" cy="0" r="1" gradientTransform="translate(165 110) rotate(45) scale(680 510)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#438FF6" stop-opacity=".72"/>
+      <stop offset="1" stop-color="#438FF6" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="cyanGlow" cx="0" cy="0" r="1" gradientTransform="translate(750 75) rotate(90) scale(420 600)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#54E0EF" stop-opacity=".36"/>
+      <stop offset="1" stop-color="#54E0EF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="violetGlow" cx="0" cy="0" r="1" gradientTransform="translate(1060 475) rotate(90) scale(390 380)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9D91F5" stop-opacity=".48"/>
+      <stop offset="1" stop-color="#9D91F5" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="card" x1="630" y1="105" x2="1140" y2="550" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#131E2D"/>
+      <stop offset="1" stop-color="#070B12"/>
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#3778BC" stroke-opacity=".12"/>
+    </pattern>
+    <filter id="shadow" x="570" y="55" width="640" height="560" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#blueGlow)"/>
+  <rect width="1200" height="630" fill="url(#cyanGlow)"/>
+  <rect width="1200" height="630" fill="url(#violetGlow)"/>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  <circle cx="900" cy="315" r="290" fill="none" stroke="#2879DF" stroke-opacity=".22" stroke-width="2"/>
+  <circle cx="900" cy="315" r="230" fill="none" stroke="#20B8D0" stroke-opacity=".18" stroke-width="2"/>
+  <g font-family="Manrope, Inter, Arial, sans-serif">
+    <rect x="66" y="55" width="45" height="45" rx="13" fill="#FFFFFF" stroke="#347ED1" stroke-opacity=".65" stroke-width="2"/>
+    <text x="76" y="88" font-size="29" font-weight="800" fill="#2879DF">M</text>
+    <circle cx="99" cy="88" r="4" fill="#20B8D0"/>
+    <text x="127" y="83" font-size="19" font-weight="800" letter-spacing=".7" fill="#183754">MAHESH BABU</text>
+    <rect x="68" y="160" width="328" height="33" rx="16" fill="#FFFFFF" fill-opacity=".76" stroke="#4D8ED0" stroke-opacity=".28"/>
+    <circle cx="86" cy="176" r="4.5" fill="#169DBE"/>
+    <text x="101" y="181" font-size="13" font-weight="800" letter-spacing="1" fill="#3E6D9B">ASPIRING SOFTWARE ENGINEER</text>
+    <text x="68" y="266" font-size="48" font-weight="800" fill="#142F4D">Building with</text>
+    <text x="68" y="322" font-size="48" font-weight="800" fill="#2879DF">intent.</text>
+    <text x="70" y="368" font-family="'DM Mono', Consolas, monospace" font-size="13" font-weight="700" fill="#376D9E">Understand → Build → Test → Improve</text>
+    <text x="70" y="410" font-size="17" fill="#4B6680">Real projects, engineering decisions,</text>
+    <text x="70" y="437" font-size="17" fill="#4B6680">and learning through building.</text>
+    <g font-family="Consolas, monospace" font-size="10" font-weight="700">
+      <rect x="70" y="485" width="136" height="32" rx="8" fill="#FFFFFF" fill-opacity=".82" stroke="#6099D1" stroke-opacity=".56"/>
+      <text x="80" y="505" fill="#315B83">PRODUCT THINKING</text>
+      <rect x="215" y="485" width="146" height="32" rx="8" fill="#FFFFFF" fill-opacity=".82" stroke="#6099D1" stroke-opacity=".56"/>
+      <text x="225" y="505" fill="#315B83">SOFTWARE PROJECTS</text>
+      <rect x="370" y="485" width="132" height="32" rx="8" fill="#FFFFFF" fill-opacity=".82" stroke="#6099D1" stroke-opacity=".56"/>
+      <text x="380" y="505" fill="#315B83">GITHUB EXPLORER</text>
+    </g>
+  </g>
+  <rect x="630" y="120" width="512" height="440" rx="22" fill="#1A4A84" fill-opacity=".2" filter="url(#shadow)"/>
+  <rect x="625" y="96" width="512" height="445" rx="21" fill="url(#card)" stroke="#83BFFF" stroke-opacity=".86" stroke-width="2"/>
+  <path d="M646 97H1116a20 20 0 0 1 20 20v34H626v-34a20 20 0 0 1 20-20Z" fill="#1B2636"/>
+  <circle cx="653" cy="121" r="4.5" fill="#FF777D"/>
+  <circle cx="671" cy="121" r="4.5" fill="#FFD36B"/>
+  <circle cx="689" cy="121" r="4.5" fill="#5BD69A"/>
+  <text x="718" y="126" font-family="Manrope, Arial, sans-serif" font-size="13" font-weight="800" fill="#E5F0FF">GitHub Explorer</text>
+  <rect x="1001" y="109" width="116" height="28" rx="7" fill="#193A3A" stroke="#49CDBF" stroke-opacity=".65"/>
+  <text x="1010" y="127" font-family="Consolas, monospace" font-size="10" font-weight="700" fill="#91F4DE">READ ONLY</text>
+  <rect x="627" y="151" width="508" height="39" fill="#111A27"/>
+  <rect x="646" y="150" width="83" height="41" fill="#0C131E" stroke="#71B9FF" stroke-opacity=".85"/>
+  <text x="663" y="175" font-family="Consolas, monospace" font-size="12" fill="#D2E5FA">App.jsx</text>
+  <text x="1080" y="175" font-family="Consolas, monospace" font-size="12" font-weight="700" fill="#93CAFF">GH ↗</text>
+  <g font-family="Consolas, monospace" font-size="12">
+    <g fill="#758AA4">
+      <text x="649" y="218">01</text><text x="649" y="245">02</text><text x="649" y="272">03</text><text x="649" y="299">04</text><text x="649" y="326">05</text><text x="649" y="353">06</text><text x="649" y="380">07</text><text x="649" y="407">08</text><text x="649" y="434">09</text><text x="649" y="461">10</text>
+    </g>
+    <text x="678" y="218" fill="#82B8FF">import <tspan fill="#C9A7FF">{ useState }</tspan><tspan fill="#82B8FF"> from </tspan><tspan fill="#B7F5A6">'react';</tspan></text>
+    <text x="678" y="245" fill="#82B8FF">function <tspan fill="#FFD580">Portfolio</tspan><tspan fill="#E4ECF8">() {</tspan></text>
+    <text x="678" y="272" fill="#82B8FF">  const <tspan fill="#9CDCFE">principles</tspan><tspan fill="#E4ECF8"> = [</tspan></text>
+    <text x="678" y="299" fill="#B7F5A6">    'Understand',</text>
+    <text x="678" y="326" fill="#B7F5A6">    'Build',</text>
+    <text x="678" y="353" fill="#B7F5A6">    'Test',</text>
+    <text x="678" y="380" fill="#B7F5A6">    'Improve'<tspan fill="#E4ECF8"> ];</tspan></text>
+    <text x="678" y="407" fill="#9AAAC0">// Keep learning by building</text>
+    <text x="678" y="434" fill="#82B8FF">return <tspan fill="#54D2EA">&lt;Projects /&gt;</tspan><tspan fill="#E4ECF8">;</tspan></text>
+    <text x="678" y="461" fill="#E4ECF8">}</text>
+  </g>
+  <path d="M648 489H1114" stroke="#31435A"/>
+  <text x="649" y="513" font-family="Consolas, monospace" font-size="12" fill="#7DA3C8">PUBLIC SOURCE</text>
+  <text x="925" y="513" font-family="Consolas, monospace" font-size="12" fill="#7DDCD6">UNDERSTAND / BUILD</text>
+</svg>
