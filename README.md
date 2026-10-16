@@ -4,66 +4,97 @@
 
 > **Understand → Build → Test → Improve**
 
-A responsive, source-first portfolio about learning software engineering by investigating problems, building products, testing what works, and improving the implementation. Built with React and Vite, with a live read-only GitHub explorer.
+A responsive personal portfolio built with **React** and **Vite**. It presents my engineering journey, selected projects, and a read-only explorer for browsing public GitHub repositories and source files.
 
-**Repository:** [BoyidapuMaheshBabu/mahesh-babu-portfolio](https://github.com/BoyidapuMaheshBabu/mahesh-babu-portfolio)
+This project is maintained for **local development and testing**. It is not currently deployed.
 
-## Features
+## Overview
 
-- Animated hero, orbital glassmorphism, motion-led project cards, scroll reveals, and responsive navigation.
-- Three grounded project showcases: TermRunway Android, programming problem-solving, and this portfolio.
-- Live public GitHub profile statistics and interactive repository/folder explorer.
-- Keyboard-visible focus styles, mobile layouts, and reduced-motion support.
-- No backend, GitHub token, database, or deployment configuration.
+The portfolio is designed to show both the work and the process behind it: exploring problems, making implementation decisions, building practical software, and improving through testing.
 
-## Stack
+### Features
 
-- React + Vite
-- CSS animations and responsive layouts
-- Lucide icons
-- GitHub public REST API
+- **Portfolio presentation** — responsive navigation, animated sections, project cards, and glass-inspired visual styling.
+- **Project highlights** — showcases TermRunway Android, programming problem-solving, and the portfolio itself.
+- **GitHub Explorer** — browse public repository details and source folders through an interactive, read-only interface.
+- **Public profile data** — displays GitHub information retrieved from public API endpoints.
+- **Accessibility considerations** — visible keyboard-focus styles, responsive layouts, and reduced-motion support.
 
-## Run locally
+## Technology Stack
 
-1. Clone or update the repository using GitHub Desktop.
-2. Install a current Node.js LTS release.
-3. Open the repository folder in VS Code.
-4. In the terminal, run:
+| Technology | Purpose |
+|---|---|
+| React | Component-based user interface |
+| Vite | Local development server and build tooling |
+| CSS | Responsive layouts, visual styling, and animations |
+| Lucide | Interface icons |
+| GitHub REST API | Public profile and repository data |
+
+## Run Locally
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) with npm
+- [Git](https://git-scm.com/) or GitHub Desktop
+
+### Setup
+
+1. Clone the repository or open your local clone.
+2. Open the project folder in a terminal.
+3. Install dependencies:
 
    ```bash
    npm install
+   ```
+
+4. Start the development server:
+
+   ```bash
    npm run dev
    ```
 
-5. Open the local URL printed by Vite.
+5. Open the local URL shown in the terminal.
 
-To check a production build locally:
+### Build and Preview
+
+Create a production build:
 
 ```bash
 npm run build
+```
+
+Preview the generated build locally:
+
+```bash
 npm run preview
 ```
 
-The project is intentionally not configured to deploy or publish. It is designed for local development and testing.
+## GitHub Explorer: Data and Privacy
 
-## GitHub Explorer
+The explorer uses GitHub's public, unauthenticated API to retrieve public profile and repository information.
 
-The explorer reads public profile, repository, and folder data from GitHub's unauthenticated API. It does not request private repository access and does not use a personal access token. GitHub's public API rate limits apply. If loading fails, retry later.
+- No personal access token is required.
+- The project does not use a custom backend or database.
+- It does not provide access to private repositories.
+- Requests may be affected by GitHub's public API rate limits. If data fails to load, retry later.
 
-## React Bits
+## Design Acknowledgment
 
-The interface uses React component architecture and motion patterns inspired by [DavidHDev/react-bits](https://github.com/DavidHDev/react-bits), a free open-source library of customizable animated React components. See [REACT_BITS_NOTES.md](REACT_BITS_NOTES.md) for the design rationale. No premium components are required.
+Some React motion and component patterns were explored with reference to [React Bits by DavidHDev](https://github.com/DavidHDev/react-bits), an open-source collection of customizable React components. The design rationale is documented in [REACT_BITS_NOTES.md](REACT_BITS_NOTES.md).
 
-## Manual test checklist
+## Verification
 
-- [ ] Run `npm install` and `npm run dev`.
-- [ ] Check the navigation and all section links on desktop and mobile.
-- [ ] Confirm the featured project links open the intended GitHub repositories.
-- [ ] Load the GitHub explorer, search repositories, open a folder, and return with breadcrumbs.
-- [ ] Test a slow/offline connection and the GitHub retry control.
-- [ ] Enable reduced motion in OS settings and verify animations are minimized.
-- [ ] Run `npm run build` and resolve any reported errors before treating the migration as complete.
+When reviewing changes, check the following locally:
+
+- Start the app with `npm run dev` and navigate through each section.
+- Test the layout on desktop and mobile screen sizes.
+- Use the GitHub Explorer to search repositories, open a folder, and navigate back through breadcrumbs.
+- Check the interface with reduced motion enabled.
+- Run `npm run build` and address any reported errors.
 
 ---
 
-**Built to make the process visible—not just the finished screen.**
+## Developer
+
+**Boyidapu Mahesh Babu**  
+Diploma in Computer Science Engineering student
